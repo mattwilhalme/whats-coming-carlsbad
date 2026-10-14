@@ -1,0 +1,9 @@
+{
+  "name": "carlsbad-data-poc",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch:arcgis": "node fetch-arcgis.mjs",
+    "build": "node build-outputs.mjs"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "retrieved_at": "2026-10-14T15:35:00-07:00",
+  "timezone": "America/Los_Angeles",
+  "sources": [
+    {"name":"Carlsbad BuildingPermits FeatureServer","url":"https://services.arcgis.com/ay9ePoQ2UfAX3U38/ArcGIS/rest/services/BuildingPermits/FeatureServer","http_status":200,"retained":"arcgis-service.json, arcgis-layer-0.json, arcgis-page-*.geojson, arcgis-all.geojson"},
+    {"name":"California ABC Daily CSV Export","url":"https://www.abc.ca.gov/wp-content/uploads/DailyExport-CSV.zip","http_status":200,"retained":"abc-daily-export.zip"},
+    {"name":"San Diego County Food Facility Permits","url":"https://internal-sandiegocounty.data.socrata.com/resource/c5ez-ufrd.json","http_status":200,"retained":"sd-food-carlsbad.json and sd-food-metadata.json","note":"Full dataset downloaded then filtered locally because server-side where query returned 400. Normalized outputs omit contact fields."},
+    {"name":"CEQAnet Fairfield Apartments","url":"https://ceqanet.lci.ca.gov/2026100315","http_status":200,"retained":"ceqa-2026100315.html"},
+    {"name":"CEQAnet Salk Avenue Apartments","url":"https://ceqanet.lci.ca.gov/2026030432/3","http_status":200,"retained":"ceqa-2026030432-3.html"},
+    {"name":"CEQAnet Resort View Apartments","url":"https://ceqanet.lci.ca.gov/2026010839","http_status":200,"retained":"ceqa-2026010839.html"},
+    {"name":"Salt | Grass developer page","url":"https://www.blvd-beach.com/","http_status":200,"retained":"salt-grass-developer.html"},
+    {"name":"Carlsbad planning notices","url":"https://www.carlsbadca.gov/departments/community-development/planning/agendas-minutes-notices","http_status":403,"retained":"URL and status only"},
+    {"name":"Seed CSV","url":"user-provided local file","http_status":null,"retained":"seed-original.csv"}
+  ]
+}

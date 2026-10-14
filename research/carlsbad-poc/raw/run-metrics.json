@@ -1,0 +1,14 @@
+{
+  "arcgis_records": 9886,
+  "arcgis_nonresidential": 745,
+  "arcgis_current_90_days": 0,
+  "commercial_permits_with_address_level_business_candidate": 115,
+  "commercial_permit_address_match_rate": 0.15436241610738255,
+  "abc_carlsbad_rows": 501,
+  "abc_pending_application_rows": 23,
+  "tenant_candidates": 17,
+  "county_food_carlsbad": 602,
+  "strong_candidates": 2,
+  "candidates_with_historical_permit_match": 0,
+  "projects": 6
+}
