@@ -55,6 +55,8 @@ type SignalRow = {
   source_url: string;
   uncertainty_note: string;
   signal_kind: BusinessSignal["signalKind"];
+  evidence_level: BusinessSignal["evidenceLevel"];
+  is_baseline: boolean;
 };
 
 export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
@@ -81,6 +83,8 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
       firstSeenAt: row.first_seen_at,
       lastSeenAt: row.last_seen_at,
       signalKind: row.signal_kind,
+      evidenceLevel: row.evidence_level,
+      isBaseline: row.is_baseline,
       uncertaintyNote: row.uncertainty_note,
       sourceUrl: row.source_url
     });

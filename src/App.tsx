@@ -4,7 +4,8 @@ import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadPro
 import type { BusinessSignal, IngestionHealth, Project } from "./types";
 
 const labels = { all: "All", apartments: "Apartments", "mixed-use": "Mixed use", commercial: "Commercial" } as const;
-const signalLabels = { all: "All tracked businesses", newly_detected: "Newly detected", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
+const signalLabels = { all: "Current signals", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
+const evidenceLabels = { baseline_pending: "Baseline pending", new_pending: "New pending", changed: "Recently changed" } as const;
 const formatDate = (value: string) => new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default function App() {
@@ -52,20 +53,20 @@ export default function App() {
       </section>
 
       <section className="signals" aria-labelledby="signals-title">
-        <div className="section-heading"><div><p className="eyebrow">Licensing intelligence</p><h2 id="signals-title">Restaurant &amp; Business Signals</h2></div><strong>{visibleSignals.length} candidate{visibleSignals.length === 1 ? "" : "s"}</strong></div>
+        <div className="section-heading"><div><p className="eyebrow">Licensing intelligence</p><h2 id="signals-title">Restaurant &amp; Business Signals</h2></div><strong>{visibleSignals.length} current signal{visibleSignals.length === 1 ? "" : "s"}</strong></div>
         <div className="health" aria-label="ABC ingestion health">
           <span><small>Last verified import</small>{health?.lastSuccessfulImportAt ? formatDate(health.lastSuccessfulImportAt) : "Not imported yet"}</span>
           <span><small>Data retrieved</small>{health?.dataRetrievedAt ? formatDate(health.dataRetrievedAt) : "Awaiting first run"}</span>
           <span><small>Carlsbad records</small>{health?.trackedRecordCount ?? 0}</span>
         </div>
-        <p className="section-intro">ABC records are licensing signals, not opening announcements. Applications can reflect transfers, added license types, or plans that never open.</p>
+        <p className="section-intro">This list now includes only APP/PEND records present in the latest ABC export. Baseline records may be longstanding; new records are those first observed after monitoring began. Neither is an opening announcement.</p>
         <div className="filters" role="group" aria-label="Filter restaurant and business signals">
           {Object.entries(signalLabels).map(([value, label]) => <button key={value} className={signalFilter === value ? "active" : ""} onClick={() => setSignalFilter(value as keyof typeof signalLabels)}>{label}</button>)}
         </div>
         <div className="signal-list">
           {visibleSignals.map((signal) => <article className="signal-card" key={signal.id}>
-            <div><span className={`signal-kind ${signal.signalKind}`}>{signal.signalKind.replaceAll("_", " ")}</span><h3>{signal.displayName}</h3><p className="location">{signal.address}{signal.suite ? ` · ${signal.suite}` : ""}</p></div>
-            <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>First detected</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
+            <div><span className={`signal-kind ${signal.evidenceLevel}`}>{evidenceLabels[signal.evidenceLevel]}</span><h3>{signal.displayName}</h3><p className="location">{signal.address}{signal.suite ? ` · ${signal.suite}` : ""}</p></div>
+            <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>{signal.isBaseline ? "Monitoring baseline" : "First detected"}</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
             <p className="uncertainty">{signal.uncertaintyNote}</p>
             <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
           </article>)}

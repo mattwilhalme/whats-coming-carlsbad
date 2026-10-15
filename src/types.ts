@@ -25,6 +25,8 @@ export type BusinessSignal = {
   firstSeenAt: string;
   lastSeenAt: string;
   signalKind: "newly_detected" | "pending_application" | "recently_changed" | "tracked_business";
+  evidenceLevel: "baseline_pending" | "new_pending" | "changed";
+  isBaseline: boolean;
   uncertaintyNote: string;
   sourceUrl: string;
 };
