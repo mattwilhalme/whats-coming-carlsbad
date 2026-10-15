@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --pretty false"
+    "typecheck": "tsc -b --pretty false",
+    "test": "node --test tests/**/*.test.mjs",
+    "abc:ingest": "node scripts/abc/ingest.mjs",
+    "abc:dry-run": "node scripts/abc/ingest.mjs --dry-run",
+    "abc:fixture": "node scripts/abc/ingest.mjs --dry-run --fixture tests/fixtures/abc-sample.csv"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",

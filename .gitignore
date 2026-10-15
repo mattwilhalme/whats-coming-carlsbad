@@ -10,3 +10,5 @@ research/carlsbad-poc/raw/arcgis-*.geojson
 research/carlsbad-poc/raw/ceqa-*.html
 research/carlsbad-poc/raw/salt-grass-developer.html
 research/carlsbad-poc/raw/sd-food-*.json
+.cache/
+artifacts/

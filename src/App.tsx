@@ -1,29 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
 import { seedProjects } from "./seed-projects";
-import { isSupabaseConfigured, loadProjects } from "./supabase";
-import type { Project } from "./types";
+import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadProjects } from "./supabase";
+import type { BusinessSignal, IngestionHealth, Project } from "./types";
 
 const labels = { all: "All", apartments: "Apartments", "mixed-use": "Mixed use", commercial: "Commercial" } as const;
+const signalLabels = { all: "All tracked businesses", newly_detected: "Newly detected", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
+const formatDate = (value: string) => new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>(seedProjects);
+  const [signals, setSignals] = useState<BusinessSignal[]>([]);
+  const [health, setHealth] = useState<IngestionHealth | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<keyof typeof labels>("all");
+  const [signalFilter, setSignalFilter] = useState<keyof typeof signalLabels>("all");
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [notice, setNotice] = useState(isSupabaseConfigured ? "Connecting to the live catalog…" : "Previewing the verified research seed. Connect Supabase for live data.");
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    loadProjects().then((rows) => {
-      if (rows?.length) { setProjects(rows); setNotice("Live catalog connected."); }
-      else setNotice("The live catalog is empty, so the research seed is shown.");
-    }).catch(() => setNotice("The live catalog could not be loaded, so the research seed is shown.")).finally(() => setLoading(false));
+    Promise.all([loadProjects(), loadBusinessSignals(), loadIngestionHealth()]).then(([rows, businessSignals, ingestionHealth]) => {
+      if (rows?.length) setProjects(rows);
+      setSignals(businessSignals);
+      setHealth(ingestionHealth);
+      setNotice(rows?.length ? "Live Supabase catalog connected." : "The live catalog is empty, so the verified research seed is shown.");
+    }).catch(() => setNotice("Live data could not be loaded, so the verified research seed is shown.")).finally(() => setLoading(false));
   }, []);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return projects.filter((project) => (category === "all" || project.category === category) && (!needle || `${project.name} ${project.locationText} ${project.status}`.toLowerCase().includes(needle)));
   }, [projects, query, category]);
+
+  const visibleSignals = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return signals.filter((signal) => (signalFilter === "all" || signal.signalKind === signalFilter) && (!needle || `${signal.displayName} ${signal.address} ${signal.suite ?? ""} ${signal.status}`.toLowerCase().includes(needle)));
+  }, [signals, signalFilter, query]);
 
   return <>
     <header className="masthead">
@@ -36,17 +48,39 @@ export default function App() {
         <h1>See what may be coming to Carlsbad.</h1>
         <p className="lede">Search proposed housing, mixed-use projects, commercial permits and licensing signals—each tied to its public source.</p>
         <label className="search"><span aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search an address or project" aria-label="Search an address or project" /></label>
-        <p className="source-notice" aria-live="polite">{loading ? "Loading…" : notice}</p>
+        <p className={`source-notice ${isSupabaseConfigured ? "live" : "demo"}`} aria-live="polite"><strong>{isSupabaseConfigured ? "Live data" : "Demonstration data"}</strong> · {loading ? "Loading…" : notice}</p>
+      </section>
+
+      <section className="signals" aria-labelledby="signals-title">
+        <div className="section-heading"><div><p className="eyebrow">Licensing intelligence</p><h2 id="signals-title">Restaurant &amp; Business Signals</h2></div><strong>{visibleSignals.length} candidate{visibleSignals.length === 1 ? "" : "s"}</strong></div>
+        <div className="health" aria-label="ABC ingestion health">
+          <span><small>Last verified import</small>{health?.lastSuccessfulImportAt ? formatDate(health.lastSuccessfulImportAt) : "Not imported yet"}</span>
+          <span><small>Data retrieved</small>{health?.dataRetrievedAt ? formatDate(health.dataRetrievedAt) : "Awaiting first run"}</span>
+          <span><small>Carlsbad records</small>{health?.trackedRecordCount ?? 0}</span>
+        </div>
+        <p className="section-intro">ABC records are licensing signals, not opening announcements. Applications can reflect transfers, added license types, or plans that never open.</p>
+        <div className="filters" role="group" aria-label="Filter restaurant and business signals">
+          {Object.entries(signalLabels).map(([value, label]) => <button key={value} className={signalFilter === value ? "active" : ""} onClick={() => setSignalFilter(value as keyof typeof signalLabels)}>{label}</button>)}
+        </div>
+        <div className="signal-list">
+          {visibleSignals.map((signal) => <article className="signal-card" key={signal.id}>
+            <div><span className={`signal-kind ${signal.signalKind}`}>{signal.signalKind.replaceAll("_", " ")}</span><h3>{signal.displayName}</h3><p className="location">{signal.address}{signal.suite ? ` · ${signal.suite}` : ""}</p></div>
+            <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>First detected</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
+            <p className="uncertainty">{signal.uncertaintyNote}</p>
+            <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
+          </article>)}
+          {!loading && !visibleSignals.length && <p className="empty">No live ABC signals have been published yet. The development catalog below remains available from the verified project data.</p>}
+        </div>
       </section>
 
       <section className="catalog" aria-labelledby="catalog-title">
-        <div className="section-heading"><div><p className="eyebrow">Current catalog</p><h2 id="catalog-title">Tracked projects</h2></div><strong>{visible.length} result{visible.length === 1 ? "" : "s"}</strong></div>
+        <div className="section-heading"><div><p className="eyebrow">Development catalog</p><h2 id="catalog-title">Tracked projects</h2></div><strong>{visible.length} result{visible.length === 1 ? "" : "s"}</strong></div>
         <div className="filters" role="group" aria-label="Filter projects by category">
           {Object.entries(labels).map(([value, label]) => <button key={value} className={category === value ? "active" : ""} onClick={() => setCategory(value as keyof typeof labels)}>{label}</button>)}
         </div>
         <div className="grid">
           {visible.map((project) => <article className="card" key={project.id}>
-            <div className="card-top"><span className={`category ${project.category}`}>{labels[project.category]}</span><time dateTime={project.statusAsOf}>{new Date(`${project.statusAsOf}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</time></div>
+            <div className="card-top"><span className={`category ${project.category}`}>{labels[project.category]}</span><time dateTime={project.statusAsOf}>{formatDate(project.statusAsOf)}</time></div>
             <h3>{project.name}</h3><p className="location">{project.locationText}</p>
             <dl>
               {project.proposedUnits !== null && <div><dt>Homes</dt><dd>{project.proposedUnits.toLocaleString()}</dd></div>}
@@ -59,8 +93,8 @@ export default function App() {
           {!visible.length && <p className="empty">No projects match that search yet.</p>}
         </div>
       </section>
-      <section className="method"><p className="eyebrow">How to read this</p><h2>A record is a signal, not a promise.</h2><p>Planning approval, a permit, and an opening are different events. This catalog keeps the source and date visible so you can see exactly what is known—and what is not.</p></section>
+      <section className="method"><p className="eyebrow">How to read this</p><h2>A record is a signal, not a promise.</h2><p>Planning approval, a permit, a license application and an opening are different events. This catalog keeps the source and date visible so you can see exactly what is known—and what is not.</p></section>
     </main>
-    <footer><p>What’s Coming? Carlsbad</p><p>Research prototype · Updated October 14, 2026</p></footer>
+    <footer><p>What’s Coming? Carlsbad</p><p>Public-records beta · Source dates remain visible on every record</p></footer>
   </>;
 }

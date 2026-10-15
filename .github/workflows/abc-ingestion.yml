@@ -1,0 +1,61 @@
+name: Ingest California ABC records
+
+on:
+  schedule:
+    # 9:15 a.m. Pacific in PDT and PST. The timezone guard prevents the other run.
+    - cron: "15 16 * * 1-5"
+    - cron: "15 17 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate and report without writing to Supabase
+        type: boolean
+        default: true
+      fixture:
+        description: Reprocess the committed test fixture instead of downloading ABC data
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: abc-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Pacific-time schedule guard
+        id: schedule_guard
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" != "schedule" ]] || [[ "$(TZ=America/Los_Angeles date +%H)" == "09" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.schedule_guard.outputs.run == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.schedule_guard.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.schedule_guard.outputs.run == 'true'
+      - run: npm test
+        if: steps.schedule_guard.outputs.run == 'true'
+      - name: Run ABC collector
+        if: steps.schedule_guard.outputs.run == 'true'
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.fixture }}" == "true" ]]; then args+=(--fixture tests/fixtures/abc-sample.csv); fi
+          node scripts/abc/ingest.mjs "${args[@]}"
