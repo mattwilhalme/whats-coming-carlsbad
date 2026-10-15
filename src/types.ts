@@ -16,6 +16,7 @@ export type Project = {
 export type BusinessSignal = {
   id: string;
   displayName: string;
+  legalApplicant: string | null;
   address: string;
   suite: string | null;
   licenseTypes: string[];

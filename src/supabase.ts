@@ -44,6 +44,7 @@ export async function loadProjects(): Promise<Project[] | null> {
 type SignalRow = {
   id: string;
   display_name: string;
+  legal_applicant: string | null;
   address: string;
   suite: string | null;
   license_type: string;
@@ -65,7 +66,7 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
   if (error) throw error;
   const grouped = new Map<string, BusinessSignal>();
   for (const row of data as SignalRow[]) {
-    const key = `${row.display_name}|${row.address}|${row.suite ?? ""}|${row.status}`;
+    const key = `${row.display_name}|${row.legal_applicant ?? ""}|${row.address}|${row.suite ?? ""}|${row.status}`;
     const existing = grouped.get(key);
     if (existing) {
       if (!existing.licenseTypes.includes(row.license_type)) existing.licenseTypes.push(row.license_type);
@@ -74,6 +75,7 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
     grouped.set(key, {
       id: row.id,
       displayName: row.display_name,
+      legalApplicant: row.legal_applicant,
       address: row.address,
       suite: row.suite,
       licenseTypes: [row.license_type],

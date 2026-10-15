@@ -35,7 +35,7 @@ export default function App() {
 
   const visibleSignals = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return signals.filter((signal) => (signalFilter === "all" || signal.signalKind === signalFilter) && (!needle || `${signal.displayName} ${signal.address} ${signal.suite ?? ""} ${signal.status}`.toLowerCase().includes(needle)));
+    return signals.filter((signal) => (signalFilter === "all" || signal.signalKind === signalFilter) && (!needle || `${signal.displayName} ${signal.legalApplicant ?? ""} ${signal.address} ${signal.suite ?? ""} ${signal.status}`.toLowerCase().includes(needle)));
   }, [signals, signalFilter, query]);
 
   return <>
@@ -67,8 +67,17 @@ export default function App() {
           {visibleSignals.map((signal) => <article className="signal-card" key={signal.id}>
             <div><span className={`signal-kind ${signal.evidenceLevel}`}>{evidenceLabels[signal.evidenceLevel]}</span><h3>{signal.displayName}</h3><p className="location">{signal.address}{signal.suite ? ` · ${signal.suite}` : ""}</p></div>
             <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>{signal.isBaseline ? "Monitoring baseline" : "First detected"}</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
-            <p className="uncertainty">{signal.uncertaintyNote}</p>
-            <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
+            <div className="signal-context">
+              <p className="uncertainty">{signal.uncertaintyNote}</p>
+              <details className="signal-details">
+                <summary>Application details</summary>
+                <dl>
+                  <div><dt>Legal applicant</dt><dd>{signal.legalApplicant ?? "Not listed"}</dd></div>
+                  <div><dt>Last verified</dt><dd>{formatDate(signal.lastSeenAt)}</dd></div>
+                </dl>
+              </details>
+              <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
+            </div>
           </article>)}
           {!loading && !visibleSignals.length && <p className="empty">No live ABC signals have been published yet. The development catalog below remains available from the verified project data.</p>}
         </div>
