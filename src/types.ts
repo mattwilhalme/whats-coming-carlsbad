@@ -40,6 +40,15 @@ export type BusinessSignal = {
     sourceUrl: string;
     matchLevel: "name_and_address" | "address_only";
   } | null;
+  dehqCheck: {
+    recordNumber: string;
+    projectName: string;
+    recordType: string;
+    status: string;
+    openedDate: string;
+    sourceUrl: string;
+    matchLevel: "name_and_address" | "address_only";
+  } | null;
 };
 
 export type IngestionHealth = {

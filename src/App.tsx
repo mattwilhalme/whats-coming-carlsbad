@@ -31,6 +31,17 @@ function CountyCheck({ signal }: { signal: BusinessSignal }) {
   </div>;
 }
 
+function DehqCheck({ signal }: { signal: BusinessSignal }) {
+  const check = signal.dehqCheck;
+  if (!check) return null;
+  const exact = check.matchLevel === "name_and_address";
+  return <div className={`government-check dehq-check ${exact ? "exact" : "address-only"}`}>
+    <div><strong>{exact ? "DEHQ food-plan match" : "DEHQ food plan at this address"}</strong><span>{check.projectName} · {check.status} · Filed {formatDate(check.openedDate)}</span></div>
+    <a href={check.sourceUrl} target="_blank" rel="noreferrer">Plan-check record<span aria-hidden="true">↗</span></a>
+    {!exact && <small>The address matches, but the plan name differs. This may be a prior tenant or another suite.</small>}
+  </div>;
+}
+
 export default function App() {
   const [projects, setProjects] = useState<Project[]>(seedProjects);
   const [signals, setSignals] = useState<BusinessSignal[]>([]);
@@ -88,7 +99,7 @@ export default function App() {
         </div>
         <div className="signal-list">
           {visibleSignals.map((signal) => <article className="signal-card" key={signal.id}>
-            <div className="signal-identity"><span className={`signal-kind ${signal.evidenceLevel}`}>{evidenceLabels[signal.evidenceLevel]}</span><h3>{signal.displayName}</h3><p className="location">{formatAddress(signal.fullAddress)}</p><LocationMap address={signal.fullAddress} label={`${signal.displayName} at ${formatAddress(signal.fullAddress)}`} /><CountyCheck signal={signal} /></div>
+            <div className="signal-identity"><span className={`signal-kind ${signal.evidenceLevel}`}>{evidenceLabels[signal.evidenceLevel]}</span><h3>{signal.displayName}</h3><p className="location">{formatAddress(signal.fullAddress)}</p><LocationMap address={signal.fullAddress} label={`${signal.displayName} at ${formatAddress(signal.fullAddress)}`} /><DehqCheck signal={signal} /><CountyCheck signal={signal} /></div>
             <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>{signal.isBaseline ? "Monitoring baseline" : "First detected"}</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
             <div className="signal-context">
               <p className="uncertainty">{signal.uncertaintyNote}</p>

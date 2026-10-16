@@ -1,0 +1,52 @@
+name: Ingest County DEHQ food-plan records
+
+on:
+  schedule:
+    # Weekly, staggered after the other government-source collectors.
+    - cron: "20 18 * * 3"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate and report without writing to Supabase
+        type: boolean
+        default: false
+      start_date:
+        description: Optional start date (MM/DD/YYYY); defaults to 45 days ago
+        type: string
+        required: false
+      end_date:
+        description: Optional end date (MM/DD/YYYY); defaults to today
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dehq-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Run DEHQ food-plan collector
+        env:
+          PLAYWRIGHT_BROWSER_CHANNEL: chrome
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          if [[ -n "${{ inputs.start_date }}" ]]; then args+=(--start-date "${{ inputs.start_date }}"); fi
+          if [[ -n "${{ inputs.end_date }}" ]]; then args+=(--end-date "${{ inputs.end_date }}"); fi
+          node scripts/dehq/ingest.mjs "${args[@]}"

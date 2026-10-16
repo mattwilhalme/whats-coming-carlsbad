@@ -14,7 +14,10 @@
     "abc:fixture": "node scripts/abc/ingest.mjs --dry-run --fixture tests/fixtures/abc-sample.csv",
     "county:ingest": "node scripts/county-food/ingest.mjs",
     "county:dry-run": "node scripts/county-food/ingest.mjs --dry-run",
-    "county:fixture": "node scripts/county-food/ingest.mjs --dry-run --fixture tests/fixtures/county-food-sample.json"
+    "county:fixture": "node scripts/county-food/ingest.mjs --dry-run --fixture tests/fixtures/county-food-sample.json",
+    "dehq:ingest": "node scripts/dehq/ingest.mjs",
+    "dehq:dry-run": "node scripts/dehq/ingest.mjs --dry-run",
+    "dehq:fixture": "node scripts/dehq/ingest.mjs --dry-run --fixture tests/fixtures/dehq-sample.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",
@@ -25,6 +28,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "@vitejs/plugin-react": "6.1.2",
+    "playwright-core": "1.64.1",
     "typescript": "7.0.2",
     "vite": "8.3.4"
   }

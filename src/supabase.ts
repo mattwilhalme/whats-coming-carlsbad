@@ -66,6 +66,13 @@ type SignalRow = {
   county_source_updated_at: string | null;
   county_source_url: string | null;
   county_match_level: "name_and_address" | "address_only" | null;
+  dehq_record_number: string | null;
+  dehq_project_name: string | null;
+  dehq_record_type: string | null;
+  dehq_status: string | null;
+  dehq_opened_date: string | null;
+  dehq_source_url: string | null;
+  dehq_match_level: "name_and_address" | "address_only" | null;
 };
 
 export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
@@ -106,6 +113,15 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
         sourceUpdatedAt: row.county_source_updated_at,
         sourceUrl: row.county_source_url,
         matchLevel: row.county_match_level
+      } : null,
+      dehqCheck: row.dehq_record_number && row.dehq_project_name && row.dehq_record_type && row.dehq_status && row.dehq_opened_date && row.dehq_source_url && row.dehq_match_level ? {
+        recordNumber: row.dehq_record_number,
+        projectName: row.dehq_project_name,
+        recordType: row.dehq_record_type,
+        status: row.dehq_status,
+        openedDate: row.dehq_opened_date,
+        sourceUrl: row.dehq_source_url,
+        matchLevel: row.dehq_match_level
       } : null
     });
   }
