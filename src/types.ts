@@ -31,6 +31,15 @@ export type BusinessSignal = {
   isBaseline: boolean;
   uncertaintyNote: string;
   sourceUrl: string;
+  countyCheck: {
+    recordId: string;
+    facilityName: string;
+    permitStatus: string | null;
+    activePermit: string | null;
+    sourceUpdatedAt: string | null;
+    sourceUrl: string;
+    matchLevel: "name_and_address" | "address_only";
+  } | null;
 };
 
 export type IngestionHealth = {

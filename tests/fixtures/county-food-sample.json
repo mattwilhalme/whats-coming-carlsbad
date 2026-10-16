@@ -1,0 +1,4 @@
+[
+  {"id":"1","record_id":"DEH2026-1","record_name":"Kura Sushi","permit_status":"Issued","active_permit":"A","business_type":"Restaurant Food Facility","address":"5970 AVENIDA ENCINAS","city":"CARLSBAD","state":"CA","zip":"92008","permit_owner_full":"SHOULD NOT BE RETAINED","permit_owner":"555-0100","last_updated":"2026-08-10T00:00:00.000"},
+  {"id":"2","record_id":"DEH2026-2","record_name":"Elsewhere Cafe","permit_status":"Issued","active_permit":"A","business_type":"Restaurant Food Facility","address":"1 MAIN STREET","city":"OCEANSIDE","state":"CA","zip":"92054","last_updated":"2026-08-10T00:00:00.000"}
+]

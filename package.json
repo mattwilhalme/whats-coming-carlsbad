@@ -11,7 +11,10 @@
     "test": "node --test tests/**/*.test.mjs",
     "abc:ingest": "node scripts/abc/ingest.mjs",
     "abc:dry-run": "node scripts/abc/ingest.mjs --dry-run",
-    "abc:fixture": "node scripts/abc/ingest.mjs --dry-run --fixture tests/fixtures/abc-sample.csv"
+    "abc:fixture": "node scripts/abc/ingest.mjs --dry-run --fixture tests/fixtures/abc-sample.csv",
+    "county:ingest": "node scripts/county-food/ingest.mjs",
+    "county:dry-run": "node scripts/county-food/ingest.mjs --dry-run",
+    "county:fixture": "node scripts/county-food/ingest.mjs --dry-run --fixture tests/fixtures/county-food-sample.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",

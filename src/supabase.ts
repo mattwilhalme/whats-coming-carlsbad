@@ -59,6 +59,13 @@ type SignalRow = {
   signal_kind: BusinessSignal["signalKind"];
   evidence_level: BusinessSignal["evidenceLevel"];
   is_baseline: boolean;
+  county_record_id: string | null;
+  county_facility_name: string | null;
+  county_permit_status: string | null;
+  county_active_permit: string | null;
+  county_source_updated_at: string | null;
+  county_source_url: string | null;
+  county_match_level: "name_and_address" | "address_only" | null;
 };
 
 export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
@@ -90,7 +97,16 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
       evidenceLevel: row.evidence_level,
       isBaseline: row.is_baseline,
       uncertaintyNote: row.uncertainty_note,
-      sourceUrl: row.source_url
+      sourceUrl: row.source_url,
+      countyCheck: row.county_record_id && row.county_facility_name && row.county_source_url && row.county_match_level ? {
+        recordId: row.county_record_id,
+        facilityName: row.county_facility_name,
+        permitStatus: row.county_permit_status,
+        activePermit: row.county_active_permit,
+        sourceUpdatedAt: row.county_source_updated_at,
+        sourceUrl: row.county_source_url,
+        matchLevel: row.county_match_level
+      } : null
     });
   }
   return [...grouped.values()];

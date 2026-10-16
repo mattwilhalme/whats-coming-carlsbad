@@ -1,0 +1,46 @@
+name: Ingest San Diego County food permits
+
+on:
+  schedule:
+    # Weekly freshness check; the County dataset itself currently updates monthly.
+    - cron: "35 17 * * 2"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate and report without writing to Supabase
+        type: boolean
+        default: false
+      fixture:
+        description: Process the committed test fixture
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: county-food-ingestion
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Run County food-permit collector
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then args+=(--dry-run); fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.fixture }}" == "true" ]]; then args+=(--fixture tests/fixtures/county-food-sample.json); fi
+          node scripts/county-food/ingest.mjs "${args[@]}"
