@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { seedProjects } from "./seed-projects";
+import LocationMap, { isLocationMapConfigured } from "./LocationMap";
 import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadProjects } from "./supabase";
 import type { BusinessSignal, IngestionHealth, Project } from "./types";
 
@@ -7,6 +8,19 @@ const labels = { all: "All", apartments: "Apartments", "mixed-use": "Mixed use",
 const signalLabels = { all: "Current signals", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
 const evidenceLabels = { baseline_pending: "Baseline pending", new_pending: "New pending", changed: "Recently changed" } as const;
 const formatDate = (value: string) => new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+function SignalDetails({ signal }: { signal: BusinessSignal }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return <details className="signal-details" onToggle={(event) => setExpanded(event.currentTarget.open)}>
+    <summary>Application details{isLocationMapConfigured ? " & location" : ""}</summary>
+    <dl>
+      <div><dt>Legal applicant</dt><dd>{signal.legalApplicant ?? "Not listed"}</dd></div>
+      <div><dt>Last verified</dt><dd>{formatDate(signal.lastSeenAt)}</dd></div>
+    </dl>
+    {expanded && <LocationMap address={signal.fullAddress} label={`${signal.displayName} at ${signal.fullAddress}`} />}
+  </details>;
+}
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>(seedProjects);
@@ -69,13 +83,7 @@ export default function App() {
             <dl><div><dt>ABC status</dt><dd>{signal.licenseOrApplication} · {signal.status}</dd></div><div><dt>License type{signal.licenseTypes.length === 1 ? "" : "s"}</dt><dd>{signal.licenseTypes.join(", ")}</dd></div><div><dt>{signal.isBaseline ? "Monitoring baseline" : "First detected"}</dt><dd>{formatDate(signal.firstSeenAt)}</dd></div>{signal.sourceDate && <div><dt>Source date</dt><dd>{formatDate(signal.sourceDate)}</dd></div>}</dl>
             <div className="signal-context">
               <p className="uncertainty">{signal.uncertaintyNote}</p>
-              <details className="signal-details">
-                <summary>Application details</summary>
-                <dl>
-                  <div><dt>Legal applicant</dt><dd>{signal.legalApplicant ?? "Not listed"}</dd></div>
-                  <div><dt>Last verified</dt><dd>{formatDate(signal.lastSeenAt)}</dd></div>
-                </dl>
-              </details>
+              <SignalDetails signal={signal} />
               <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
             </div>
           </article>)}

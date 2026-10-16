@@ -19,6 +19,7 @@ export type BusinessSignal = {
   legalApplicant: string | null;
   address: string;
   suite: string | null;
+  fullAddress: string;
   licenseTypes: string[];
   licenseOrApplication: string;
   status: string;

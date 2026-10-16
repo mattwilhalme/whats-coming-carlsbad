@@ -47,6 +47,7 @@ type SignalRow = {
   legal_applicant: string | null;
   address: string;
   suite: string | null;
+  full_address: string;
   license_type: string;
   license_or_application: string;
   status: string;
@@ -78,6 +79,7 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
       legalApplicant: row.legal_applicant,
       address: row.address,
       suite: row.suite,
+      fullAddress: row.full_address,
       licenseTypes: [row.license_type],
       licenseOrApplication: row.license_or_application,
       status: row.status,
