@@ -11,6 +11,10 @@ export type Project = {
   statusAsOf: string;
   evidenceLabel: string;
   sourceUrl: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  matchConfidence?: number | null;
+  geometryVerified?: boolean;
 };
 
 export type BusinessSignal = {
@@ -49,6 +53,10 @@ export type BusinessSignal = {
     sourceUrl: string;
     matchLevel: "name_and_address" | "address_only";
   } | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  matchConfidence?: number | null;
+  geometryVerified?: boolean;
 };
 
 export type IngestionHealth = {

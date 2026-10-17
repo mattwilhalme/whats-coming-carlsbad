@@ -75,7 +75,7 @@ export default function App() {
   return <>
     <header className="masthead">
       <a className="brand" href="#top" aria-label="What's Coming Carlsbad home"><span className="brand-mark">WC</span><span>What’s Coming?<small>Carlsbad</small></span></a>
-      <span className="research-tag">Public-records beta</span>
+      <nav aria-label="Site navigation"><a href="./explore.html" style={{ marginRight: 16, color: "inherit", fontWeight: 700 }}>3D Map Explorer ↗</a><span className="research-tag">Public-records beta</span></nav>
     </header>
     <main id="top">
       <section className="hero">

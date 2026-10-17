@@ -13,6 +13,7 @@ A public tracker for proposed developments, restaurants, and business activity i
 An ABC application is a licensing signal, not proof that a business will open. Property matches and development plans may also change.
 
 See [architecture](docs/architecture.md) for technical details.
+See [3D map explorer](docs/map-explorer.md) for tile-provider, geocoding, coverage, and matching notes.
 
 ## Run locally
 
