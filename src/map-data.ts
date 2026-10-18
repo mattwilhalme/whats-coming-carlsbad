@@ -1,5 +1,4 @@
 import type { BusinessSignal, Project } from "./types";
-import { findReviewedLocation } from "./reviewed-locations.ts";
 
 export type MapCategory = "restaurants" | "retail" | "housing" | "commercial";
 
@@ -28,7 +27,6 @@ export type MapActivity = {
 export type MapFilter = "all" | MapCategory;
 
 export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity {
-  const reviewedLocation = findReviewedLocation(signal.displayName, signal.address);
   return {
     id: `signal:${signal.id}`,
     category: "restaurants",
@@ -41,14 +39,14 @@ export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity
     sourceLabel: "California ABC record",
     sourceUrl: signal.sourceUrl,
     uncertaintyNote: signal.uncertaintyNote,
-    latitude: reviewedLocation?.latitude ?? signal.latitude ?? null,
-    longitude: reviewedLocation?.longitude ?? signal.longitude ?? null,
-    matchConfidence: reviewedLocation?.confidence ?? signal.matchConfidence ?? null,
+    latitude: signal.latitude ?? null,
+    longitude: signal.longitude ?? null,
+    matchConfidence: signal.matchConfidence ?? null,
     geometryVerified: Boolean(signal.geometryVerified),
-    apn: reviewedLocation?.apn ?? null,
-    locationSourceUrl: reviewedLocation?.sourceUrl ?? null,
-    locationMatchRationale: reviewedLocation?.matchRationale ?? null,
-    locationReviewedAt: reviewedLocation?.reviewedAt ?? null
+    apn: signal.apn ?? null,
+    locationSourceUrl: signal.locationSourceUrl ?? null,
+    locationMatchRationale: signal.locationReviewNote ?? null,
+    locationReviewedAt: signal.locationReviewedAt ?? null
   };
 }
 

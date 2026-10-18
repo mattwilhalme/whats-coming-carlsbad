@@ -57,6 +57,11 @@ export type BusinessSignal = {
   longitude?: number | null;
   matchConfidence?: number | null;
   geometryVerified?: boolean;
+  apn?: string | null;
+  locationSourceUrl?: string | null;
+  locationMatchMethod?: string | null;
+  locationReviewNote?: string | null;
+  locationReviewedAt?: string | null;
 };
 
 export type IngestionHealth = {

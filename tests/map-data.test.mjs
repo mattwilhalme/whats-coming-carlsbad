@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { businessSignalToMapActivity, distanceMiles, filterMapActivities, hasVerifiedPoint, projectToMapActivity } from "../src/map-data.ts";
-import { reviewedLocations } from "../src/reviewed-locations.ts";
 
 const signal = {
   id: "abc-1", displayName: "Example Kitchen", legalApplicant: null, address: "100 Main St", suite: null,
@@ -21,18 +20,22 @@ test("adapts ABC evidence without inventing a location or opening status", () =>
 });
 
 test("adds only reviewed SanGIS coordinates and APN provenance", () => {
-  const row = businessSignalToMapActivity({ ...signal, displayName: "264 FRESCO", address: "264 CARLSBAD VILLAGE DR", fullAddress: "264 CARLSBAD VILLAGE DR, CARLSBAD, CA 92008" });
+  const row = businessSignalToMapActivity({
+    ...signal,
+    latitude: 33.15814050645088,
+    longitude: -117.35167718387284,
+    matchConfidence: 1,
+    apn: "2032321600",
+    locationSourceUrl: "https://example.gov/sangis",
+    locationMatchMethod: "exact_normalized_street",
+    locationReviewNote: "Exact address point; not the suite, building, tenant identity, or opening outcome.",
+    locationReviewedAt: "2026-10-17T00:00:00Z"
+  });
   assert.equal(row.apn, "2032321600");
   assert.equal(row.longitude, -117.35167718387284);
   assert.equal(row.geometryVerified, false);
   assert.match(row.locationMatchRationale, /not the suite, building, tenant identity/i);
   assert.equal(hasVerifiedPoint(row), true);
-});
-
-test("reviewed location pilot contains nine unique business/address pairs", () => {
-  assert.equal(reviewedLocations.length, 9);
-  const keys = new Set(reviewedLocations.map((row) => `${row.businessName}|${row.streetAddress}`));
-  assert.equal(keys.size, reviewedLocations.length);
 });
 
 test("maps supported project categories and leaves unmatched projects unlocated", () => {

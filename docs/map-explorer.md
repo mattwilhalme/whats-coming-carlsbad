@@ -14,12 +14,12 @@ The explorer is built from `explore.html`, `src/explore.ts`, and the reusable tr
 
 The public Supabase views contain 23 current ABC rows at 17 distinct addresses and 6 development projects. The frontend groups duplicate license types into 17 business activities, producing 23 activity cards in total.
 
-Production Supabase still has no populated property or coordinate rows. A committed, read-only SanGIS pilot now supplies nine reviewed address points and unique APN candidates to the frontend:
+Production Supabase now persists nine reviewed SanGIS premise matches and projects their safe location evidence through the public ABC view:
 
 - `public.properties`: 0 rows
 - `public.addresses`: 0 rows with coordinates (the table is empty)
 - `ingest.abc_property_candidates`: 0 rows
-- reviewed point locations in the frontend pilot: 9
+- reviewed point locations persisted in Supabase: 9
 - verified parcel/building matches: 0
 
 The explorer lists all 23 grouped activities, displays nine reviewed address-point markers, and leaves eight ABC candidates plus all six development projects as `Location pending`. A SanGIS point/APN match is explicitly not presented as a verified suite, building, tenant, or opening. See the [pilot report](../research/carlsbad-poc/apn-match-pilot.md).
@@ -40,6 +40,6 @@ Address → Parcel/APN → Property → Building → Tenant/suite → Activity/e
 
 A marker should be used for a verified point when a building match is not reviewed. A building geometry should be highlighted only after a reviewed match records its source, method, confidence, and evidence. Multiple activity records may then be grouped beneath the same property/building panel.
 
-## Next data step (requires approval)
+## Next data step
 
-The next functional mapping milestone requires a reviewed, persisted geocoding/matching workflow. That will likely add parcel/building identifiers, coordinate provenance, geometry source, match method, confidence, and review timestamps to curated tables/views. Because that is a production schema and data change, it must be proposed and approved before implementation.
+The reviewed address-point workflow is now persisted with coordinate provenance, APN, match method, confidence, review note, and review timestamp. The next functional milestone is reviewed parcel polygons and building-footprint matching for the eight remaining ABC candidates and six development projects.
