@@ -14,15 +14,15 @@ The explorer is built from `explore.html`, `src/explore.ts`, and the reusable tr
 
 The public Supabase views contain 23 current ABC rows at 17 distinct addresses and 6 development projects. The frontend groups duplicate license types into 17 business activities, producing 23 activity cards in total.
 
-No production property, coordinate, reviewed parcel, or reviewed building match currently exists:
+Production Supabase still has no populated property or coordinate rows. A committed, read-only SanGIS pilot now supplies nine reviewed address points and unique APN candidates to the frontend:
 
 - `public.properties`: 0 rows
 - `public.addresses`: 0 rows with coordinates (the table is empty)
 - `ingest.abc_property_candidates`: 0 rows
-- verified point locations: 0
+- reviewed point locations in the frontend pilot: 9
 - verified parcel/building matches: 0
 
-The explorer therefore lists the 23 grouped activities with `Location pending` and displays zero map markers. This is deliberate: an address string is not treated as a coordinate, parcel, or building match.
+The explorer lists all 23 grouped activities, displays nine reviewed address-point markers, and leaves eight ABC candidates plus all six development projects as `Location pending`. A SanGIS point/APN match is explicitly not presented as a verified suite, building, tenant, or opening. See the [pilot report](../research/carlsbad-poc/apn-match-pilot.md).
 
 ## Nearby search and privacy
 

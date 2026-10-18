@@ -1,4 +1,5 @@
 import type { BusinessSignal, Project } from "./types";
+import { findReviewedLocation } from "./reviewed-locations.ts";
 
 export type MapCategory = "restaurants" | "retail" | "housing" | "commercial";
 
@@ -18,11 +19,16 @@ export type MapActivity = {
   longitude: number | null;
   matchConfidence: number | null;
   geometryVerified: boolean;
+  apn: string | null;
+  locationSourceUrl: string | null;
+  locationMatchRationale: string | null;
+  locationReviewedAt: string | null;
 };
 
 export type MapFilter = "all" | MapCategory;
 
 export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity {
+  const reviewedLocation = findReviewedLocation(signal.displayName, signal.address);
   return {
     id: `signal:${signal.id}`,
     category: "restaurants",
@@ -35,10 +41,14 @@ export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity
     sourceLabel: "California ABC record",
     sourceUrl: signal.sourceUrl,
     uncertaintyNote: signal.uncertaintyNote,
-    latitude: signal.latitude ?? null,
-    longitude: signal.longitude ?? null,
-    matchConfidence: signal.matchConfidence ?? null,
-    geometryVerified: Boolean(signal.geometryVerified)
+    latitude: reviewedLocation?.latitude ?? signal.latitude ?? null,
+    longitude: reviewedLocation?.longitude ?? signal.longitude ?? null,
+    matchConfidence: reviewedLocation?.confidence ?? signal.matchConfidence ?? null,
+    geometryVerified: Boolean(signal.geometryVerified),
+    apn: reviewedLocation?.apn ?? null,
+    locationSourceUrl: reviewedLocation?.sourceUrl ?? null,
+    locationMatchRationale: reviewedLocation?.matchRationale ?? null,
+    locationReviewedAt: reviewedLocation?.reviewedAt ?? null
   };
 }
 
@@ -58,7 +68,11 @@ export function projectToMapActivity(project: Project): MapActivity {
     latitude: project.latitude ?? null,
     longitude: project.longitude ?? null,
     matchConfidence: project.matchConfidence ?? null,
-    geometryVerified: Boolean(project.geometryVerified)
+    geometryVerified: Boolean(project.geometryVerified),
+    apn: null,
+    locationSourceUrl: null,
+    locationMatchRationale: null,
+    locationReviewedAt: null
   };
 }
 

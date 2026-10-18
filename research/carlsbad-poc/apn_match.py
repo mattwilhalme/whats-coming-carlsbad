@@ -44,10 +44,14 @@ def field(row, *aliases):
 def situs(row):
     address = field(row, "FULLADDR", "FULL_ADDRESS", "SITE_ADDRESS", "SITUS_ADDRESS", "ADDRESS", "ADDR")
     if not address:
-        number = field(row, "ADDRNUM", "ADDR_NUMBER", "STREET_NUMBER", "HOUSE_NUMBER")
-        street = field(row, "STREETNAME", "STREET_NAME", "STNAME")
-        suffix = field(row, "STREETTYPE", "STREET_TYPE", "STTYPE")
-        address = " ".join(filter(None, (number, street, suffix)))
+        number = field(row, "ADDRNMBR", "ADDRNUM", "ADDR_NUMBER", "STREET_NUMBER", "HOUSE_NUMBER")
+        if re.fullmatch(r"\d+\.0", number):
+            number = number[:-2]
+        prefix = field(row, "ADDRPDIR", "PREFIX_DIRECTION")
+        street = field(row, "ADDRNAME", "STREETNAME", "STREET_NAME", "STNAME")
+        suffix = field(row, "ADDRSFX", "STREETTYPE", "STREET_TYPE", "STTYPE")
+        post_direction = field(row, "ADDRPOSTD", "POST_DIRECTION")
+        address = " ".join(filter(None, (number, prefix, street, suffix, post_direction)))
     return norm(address)
 
 def live_rows(candidates):
@@ -60,24 +64,23 @@ def live_rows(candidates):
         return result
     metadata = request(API + "?f=json")
     fields = {f["name"].upper(): f["name"] for f in metadata.get("fields", [])}
-    number_field = next((fields[k] for k in ("ADDRNUM", "ADDR_NUMBER", "STREET_NUMBER", "HOUSE_NUMBER") if k in fields), None)
+    number_field = next((fields[k] for k in ("ADDRNMBR", "ADDRNUM", "ADDR_NUMBER", "STREET_NUMBER", "HOUSE_NUMBER") if k in fields), None)
     if not number_field:
         raise RuntimeError("Unsupported ArcGIS address number field: " + str(list(fields)))
-    numbers = sorted({int(m.group(1)) for row in candidates if (m := re.match(r"^\\s*(\\d+)", row["address"]))})
+    numbers = sorted({int(m.group(1)) for row in candidates if (m := re.match(r"^\s*(\d+)", row["address"]))})
+    where = f"{number_field} IN ({','.join(map(str, numbers))}) AND UPPER(COMMUNITY) = 'CARLSBAD'"
+    count = request(API + "/query?" + urlencode({"f":"json","where":where,"returnCountOnly":"true"})).get("count", 0)
     rows = []
-    for number in numbers:
-        where = f"{number_field} = {number}"
-        count = request(API + "/query?" + urlencode({"f":"json","where":where,"returnCountOnly":"true"})).get("count", 0)
-        offset = 0
-        while offset < count:
-            params = {"f":"json","where":where,"outFields":"*","returnGeometry":"false","resultOffset":offset,"resultRecordCount":min(500,count-offset)}
-            response = request(API + "/query?" + urlencode(params))
-            batch = [x["attributes"] for x in response.get("features", [])]
-            if not batch:
-                raise RuntimeError(f"Incomplete ArcGIS response for house number {number}")
-            rows.extend(batch)
-            offset += len(batch)
-            time.sleep(0.15)
+    offset = 0
+    while offset < count:
+        params = {"f":"json","where":where,"outFields":"*","returnGeometry":"true","outSR":"4326","resultOffset":offset,"resultRecordCount":min(500,count-offset)}
+        response = request(API + "/query?" + urlencode(params))
+        batch = [{**x["attributes"], "_longitude": x.get("geometry", {}).get("x"), "_latitude": x.get("geometry", {}).get("y")} for x in response.get("features", [])]
+        if not batch:
+            raise RuntimeError("Incomplete ArcGIS response for Carlsbad candidate addresses")
+        rows.extend(batch)
+        offset += len(batch)
+        time.sleep(0.15)
     return rows
 
 
@@ -95,20 +98,25 @@ def main():
     else:
         rows = live_rows(candidates)
         source = API
-    index = defaultdict(set)
+    index = defaultdict(dict)
     valid = 0
     for row in rows:
         apn = field(row, "APN", "ASSESSOR_PARCEL_NUMBER", "ASSESSORPARCELNUMBER", "PARCELNUMBER")
         address = situs(row)
         city = field(row, "CITY", "SITUS_CITY", "COMMUNITY")
-        jurisdiction = field(row, "JURISDICTION", "JURIS", "JURIS_CODE")
+        jurisdiction = field(row, "ADDRJUR", "JURISDICTION", "JURIS", "JURIS_CODE")
         if not apn or not address:
             continue
         if city and norm(city) != "CARLSBAD":
             continue
         if jurisdiction and norm(jurisdiction) not in ("CB", "CARLSBAD"):
             continue
-        index[address].add(apn)
+        index[address][apn] = {
+            "apn": apn,
+            "longitude": row.get("_longitude"),
+            "latitude": row.get("_latitude"),
+            "address_point_id": field(row, "ADDRAPNID"),
+        }
         valid += 1
     if not valid:
         raise SystemExit("No valid address/APN rows; inspect ArcGIS schema or CSV fields.")
@@ -116,13 +124,15 @@ def main():
     for row in candidates:
         street = norm(row["address"])
         # Do not collapse suites into parcel ownership or tenant identity.
-        apns = sorted(index.get(street, []))
+        matches = [index[street][apn] for apn in sorted(index.get(street, {}))]
+        apns = [match["apn"] for match in matches]
         results.append({
             "candidate": row["candidate_name"],
             "abc_file_number": row["abc_file_number"],
             "address": row["address"],
             "suite": row["suite"].strip(),
             "apns": apns,
+            "address_points": matches,
             "status": "unmatched" if not apns else ("unique_apn_candidate" if len(apns) == 1 else "ambiguous_multiple_apns"),
             "note": "Street-level candidate only; APN and unit must be verified before publishing."
         })
