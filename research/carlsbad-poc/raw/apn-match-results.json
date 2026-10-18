@@ -1,0 +1,261 @@
+{
+  "source": "https://gis-public.sandiegocounty.gov/arcgis/rest/services/sdep_warehouse/ADDRAPN/FeatureServer/0",
+  "address_rows_indexed": 133,
+  "candidate_count": 17,
+  "unique_apn_candidates": 9,
+  "ambiguous": 0,
+  "unmatched": 8,
+  "results": [
+    {
+      "candidate": "264 FRESCO",
+      "abc_file_number": "00669412",
+      "address": "264 CARLSBAD VILLAGE DR",
+      "suite": "",
+      "apns": [
+        "2032321600"
+      ],
+      "address_points": [
+        {
+          "apn": "2032321600",
+          "longitude": -117.35167718387284,
+          "latitude": 33.15814050645088,
+          "address_point_id": "175096"
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "BILLBOARD BEVERAGES",
+      "abc_file_number": "00643674",
+      "address": "2235 FARADAY AVE.  STE Q",
+      "suite": "",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "BLUE OCEAN PRIVATEERS LTD",
+      "abc_file_number": "00681001",
+      "address": "2609 SUTTER ST",
+      "suite": "",
+      "apns": [
+        "1675113100"
+      ],
+      "address_points": [
+        {
+          "apn": "1675113100",
+          "longitude": -117.31331169152601,
+          "latitude": 33.16150620119606,
+          "address_point_id": ""
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "BLUE OCEAN SUSHI",
+      "abc_file_number": "00677147",
+      "address": "2958 MADISON ST",
+      "suite": "STE 100",
+      "apns": [
+        "2033032400"
+      ],
+      "address_points": [
+        {
+          "apn": "2033032400",
+          "longitude": -117.3468503768923,
+          "latitude": 33.16152347013818,
+          "address_point_id": ""
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "BOOTS & BEER",
+      "abc_file_number": "00676349",
+      "address": "1911 CALLE BARCELONA",
+      "suite": "STE 157",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "COUNTRY MARKETPLACE",
+      "abc_file_number": "00677671",
+      "address": "4625 GARDEN HILL LP",
+      "suite": "STE B1 & B2",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "CRACKHEADS",
+      "abc_file_number": "00630512",
+      "address": "430 CARLSBAD VILLAGE DR",
+      "suite": "",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "DOZIER IMPORTS LLC",
+      "abc_file_number": "00676078",
+      "address": "2225 CAMINO VIDA ROBLE",
+      "suite": "STE 100",
+      "apns": [
+        "2130502400"
+      ],
+      "address_points": [
+        {
+          "apn": "2130502400",
+          "longitude": -117.27276972545451,
+          "latitude": 33.11852833189627,
+          "address_point_id": "403339"
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "EMERALD SPIRITS BEER & WINE",
+      "abc_file_number": "00660249",
+      "address": "2612 EL CAMINO REAL",
+      "suite": "",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "F-86",
+      "abc_file_number": "00683368",
+      "address": "5933 SEA LION PL",
+      "suite": "STE 108",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "GRIMO",
+      "abc_file_number": "00683609",
+      "address": "2727 ROOSEVELT ST",
+      "suite": "A",
+      "apns": [
+        "2031013400"
+      ],
+      "address_points": [
+        {
+          "apn": "2031013400",
+          "longitude": -117.35008754023919,
+          "latitude": 33.16270483899926,
+          "address_point_id": "384292"
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "KURA REVOLVING SUSHI BAR",
+      "abc_file_number": "00681698",
+      "address": "5970 AVENIDA ENCINAS",
+      "suite": "",
+      "apns": [
+        "2101702200"
+      ],
+      "address_points": [
+        {
+          "apn": "2101702200",
+          "longitude": -117.32415801274942,
+          "latitude": 33.12400155866187,
+          "address_point_id": ""
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "L'ATELIER DE PARIS",
+      "abc_file_number": "00672290",
+      "address": "7150 AVENIDA ENCINAS",
+      "suite": "",
+      "apns": [
+        "2144302400"
+      ],
+      "address_points": [
+        {
+          "apn": "2144302400",
+          "longitude": -117.31167530827456,
+          "latitude": 33.10038199772733,
+          "address_point_id": ""
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "NAPATINI",
+      "abc_file_number": "00680406",
+      "address": "3088 STATE ST",
+      "suite": "STE 100",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "SLICE HOUSE BY TONY GEMIGNANI",
+      "abc_file_number": "00680531",
+      "address": "6943 EL CAMINO REAL",
+      "suite": "STE 101 & 103",
+      "apns": [],
+      "address_points": [],
+      "status": "unmatched",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "SUSHI KUCHI CARLSBAD",
+      "abc_file_number": "00664121",
+      "address": "7180 AVENIDA ENCINAS",
+      "suite": "STE 100",
+      "apns": [
+        "2144301900"
+      ],
+      "address_points": [
+        {
+          "apn": "2144301900",
+          "longitude": -117.30959853091586,
+          "latitude": 33.10036265018028,
+          "address_point_id": ""
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    },
+    {
+      "candidate": "VINO NORTE",
+      "abc_file_number": "00681189",
+      "address": "2225 CAMINO VIDA ROBLE",
+      "suite": "#100",
+      "apns": [
+        "2130502400"
+      ],
+      "address_points": [
+        {
+          "apn": "2130502400",
+          "longitude": -117.27276972545451,
+          "latitude": 33.11852833189627,
+          "address_point_id": "403339"
+        }
+      ],
+      "status": "unique_apn_candidate",
+      "note": "Street-level candidate only; APN and unit must be verified before publishing."
+    }
+  ]
+}

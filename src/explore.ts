@@ -144,6 +144,7 @@ function render() {
       <h3>${escapeHtml(activity.name)}</h3><p>${escapeHtml(activity.address)}</p>
       <dl><div><dt>Status</dt><dd>${escapeHtml(activity.status)}</dd></div><div><dt>Latest update</dt><dd>${formatDate(activity.latestUpdate)}</dd></div></dl>
       <p class="uncertainty">${escapeHtml(activity.uncertaintyNote)}</p>
+      ${activity.apn ? `<div class="location-evidence"><strong>Verified address point</strong><span>APN ${escapeHtml(activity.apn)} · reviewed ${formatDate(activity.locationReviewedAt)}</span><small>${escapeHtml(activity.locationMatchRationale ?? "")}</small><a href="${escapeHtml(activity.locationSourceUrl ?? "")}" target="_blank" rel="noreferrer">View SanGIS source ↗</a></div>` : ""}
       <a href="${escapeHtml(activity.sourceUrl)}" target="_blank" rel="noreferrer">View ${escapeHtml(activity.sourceLabel)} ↗</a>
     </article>`).join("") : `<p class="empty">No records match this view.</p>`;
   list.querySelectorAll<HTMLElement>(".activity-card").forEach((card) => {
@@ -161,6 +162,17 @@ map.on("load", () => {
   status.textContent = hasBuildings ? "3D buildings loaded. Verified activity locations appear as colored markers." : "Basemap loaded. 3D geometry is unavailable here; activity markers remain usable.";
   render();
 });
+map.on("click", "activity-points", (event) => {
+  const id = event.features?.[0]?.properties?.id as string | undefined;
+  const activity = activities.find((row) => row.id === id);
+  if (!activity) return;
+  selectActivity(activity);
+  document.querySelector<HTMLElement>("#activity-panel")!.classList.add("open");
+  document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
+  document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+map.on("mouseenter", "activity-points", () => { map.getCanvas().style.cursor = "pointer"; });
+map.on("mouseleave", "activity-points", () => { map.getCanvas().style.cursor = ""; });
 map.on("error", (event: ErrorEvent) => { console.error(event.error); status.textContent = "A map resource failed to load. The evidence list remains available."; });
 
 Promise.all([loadBusinessSignals(), loadProjects()]).then(([signals, projects]) => {
