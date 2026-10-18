@@ -73,6 +73,14 @@ type SignalRow = {
   dehq_opened_date: string | null;
   dehq_source_url: string | null;
   dehq_match_level: "name_and_address" | "address_only" | null;
+  latitude: number | null;
+  longitude: number | null;
+  apn: string | null;
+  location_source_url: string | null;
+  location_match_method: string | null;
+  location_confidence: number | null;
+  location_review_note: string | null;
+  location_reviewed_at: string | null;
 };
 
 export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
@@ -105,6 +113,15 @@ export async function loadBusinessSignals(): Promise<BusinessSignal[]> {
       isBaseline: row.is_baseline,
       uncertaintyNote: row.uncertainty_note,
       sourceUrl: row.source_url,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      matchConfidence: row.location_confidence === null ? null : Number(row.location_confidence),
+      geometryVerified: false,
+      apn: row.apn,
+      locationSourceUrl: row.location_source_url,
+      locationMatchMethod: row.location_match_method,
+      locationReviewNote: row.location_review_note,
+      locationReviewedAt: row.location_reviewed_at,
       countyCheck: row.county_record_id && row.county_facility_name && row.county_source_url && row.county_match_level ? {
         recordId: row.county_record_id,
         facilityName: row.county_facility_name,

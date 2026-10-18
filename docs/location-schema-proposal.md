@@ -1,6 +1,6 @@
 # Reviewed location persistence proposal
 
-Status: proposal only; no production schema or data changes have been applied.
+Status: approved and implemented on October 17, 2026 (Pacific time).
 
 ## Why this is the next step
 
@@ -50,6 +50,6 @@ Backfill only the nine rows in `research/carlsbad-poc/raw/apn-match-results.json
 
 Rollback is additive and low risk: restore the prior public view definition, revert the frontend adapter, and drop the new table only if its backfill is no longer needed.
 
-## Approval requested before implementation
+## Implementation result
 
-This proposal changes the production database contract and writes reviewed location data. It should be implemented only after explicit approval of the table, public fields, and nine-row backfill.
+Migration `20261018042541_persist_reviewed_locations.sql` created the ingest table, backfilled nine reviewed premise-address records, and appended the safe location fields to `public.abc_business_signals_public`. Anonymous clients can read the public fields required by the explorer but cannot read the internal `reviewed_by` column. The frontend now consumes the persisted view fields rather than a checked-in runtime fixture.
