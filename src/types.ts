@@ -17,6 +17,28 @@ export type Project = {
   geometryVerified?: boolean;
 };
 
+export type PlanningDocumentClaim = {
+  key: string;
+  label: string;
+  value: string;
+  valueKind: "text" | "integer" | "date" | "boolean";
+  pageNumber: number;
+  confidence: number;
+};
+
+export type PlanningDocumentEvidence = {
+  documentId: string;
+  title: string;
+  documentType: string;
+  publishedAt: string | null;
+  sourcePageUrl: string;
+  fileUrl: string;
+  pageCount: number;
+  evidenceNote: string;
+  reviewedAt: string;
+  claims: PlanningDocumentClaim[];
+};
+
 export type BusinessSignal = {
   id: string;
   displayName: string;

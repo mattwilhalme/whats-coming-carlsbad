@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { seedProjects } from "./seed-projects";
 import LocationMap from "./LocationMap";
-import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadProjects } from "./supabase";
-import type { BusinessSignal, IngestionHealth, Project } from "./types";
+import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadProjectDocumentEvidence, loadProjects } from "./supabase";
+import type { BusinessSignal, IngestionHealth, PlanningDocumentEvidence, Project } from "./types";
 
 const labels = { all: "All", apartments: "Apartments", "mixed-use": "Mixed use", commercial: "Commercial" } as const;
 const signalLabels = { all: "Current signals", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
@@ -42,10 +42,24 @@ function DehqCheck({ signal }: { signal: BusinessSignal }) {
   </div>;
 }
 
+function ProjectEvidence({ documents }: { documents: PlanningDocumentEvidence[] }) {
+  if (!documents.length) return null;
+  return <div className="project-evidence">
+    <strong>Reviewed document evidence</strong>
+    {documents.map((document) => <details key={document.documentId}>
+      <summary>{document.title}</summary>
+      <ul>{document.claims.map((claim) => <li key={claim.key}><span>{claim.label}</span><b>{claim.value}</b><small>Page {claim.pageNumber}</small></li>)}</ul>
+      <p>{document.evidenceNote}</p>
+      <div><a href={document.fileUrl} target="_blank" rel="noreferrer">Open PDF ↗</a><a href={document.sourcePageUrl} target="_blank" rel="noreferrer">CEQAnet record ↗</a></div>
+    </details>)}
+  </div>;
+}
+
 export default function App() {
   const [projects, setProjects] = useState<Project[]>(seedProjects);
   const [signals, setSignals] = useState<BusinessSignal[]>([]);
   const [health, setHealth] = useState<IngestionHealth | null>(null);
+  const [documentEvidence, setDocumentEvidence] = useState<Record<string, PlanningDocumentEvidence[]>>({});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<keyof typeof labels>("all");
   const [signalFilter, setSignalFilter] = useState<keyof typeof signalLabels>("all");
@@ -54,10 +68,11 @@ export default function App() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    Promise.all([loadProjects(), loadBusinessSignals(), loadIngestionHealth()]).then(([rows, businessSignals, ingestionHealth]) => {
+    Promise.all([loadProjects(), loadBusinessSignals(), loadIngestionHealth(), loadProjectDocumentEvidence()]).then(([rows, businessSignals, ingestionHealth, evidence]) => {
       if (rows?.length) setProjects(rows);
       setSignals(businessSignals);
       setHealth(ingestionHealth);
+      setDocumentEvidence(evidence);
       setNotice(rows?.length ? "Live Supabase catalog connected." : "The live catalog is empty, so the verified research seed is shown.");
     }).catch(() => setNotice("Live data could not be loaded, so the verified research seed is shown.")).finally(() => setLoading(false));
   }, []);
@@ -126,6 +141,7 @@ export default function App() {
               {project.commercialSqft !== null && <div><dt>Commercial</dt><dd>{project.commercialSqft.toLocaleString()} sq ft</dd></div>}
             </dl>
             <div className="status"><span></span><p><small>Documented status</small>{project.status}</p></div>
+            <ProjectEvidence documents={documentEvidence[project.slug] ?? []} />
             <a className="source-link" href={project.sourceUrl} target="_blank" rel="noreferrer">View {project.evidenceLabel}<span aria-hidden="true">↗</span></a>
           </article>)}
           {!visible.length && <p className="empty">No projects match that search yet.</p>}

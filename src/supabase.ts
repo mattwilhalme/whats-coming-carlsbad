@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { BusinessSignal, IngestionHealth, Project } from "./types";
+import type { BusinessSignal, IngestionHealth, PlanningDocumentEvidence, Project } from "./types";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
@@ -39,6 +39,61 @@ export async function loadProjects(): Promise<Project[] | null> {
     evidenceLabel: row.source_label,
     sourceUrl: row.source_url
   }));
+}
+
+type ProjectDocumentEvidenceRow = {
+  project_slug: string;
+  document_id: string;
+  document_title: string;
+  document_type: string;
+  published_at: string | null;
+  source_page_url: string;
+  file_url: string;
+  page_count: number;
+  evidence_note: string;
+  claim_key: string;
+  claim_label: string;
+  claim_value: string;
+  value_kind: "text" | "integer" | "date" | "boolean";
+  page_number: number;
+  confidence: number;
+  reviewed_at: string;
+};
+
+export async function loadProjectDocumentEvidence(): Promise<Record<string, PlanningDocumentEvidence[]>> {
+  if (!client) return {};
+  const { data, error } = await client.from("project_document_evidence_public").select("*").order("published_at", { ascending: false }).limit(1000);
+  if (error) throw error;
+  const projects: Record<string, PlanningDocumentEvidence[]> = {};
+  const documents = new Map<string, PlanningDocumentEvidence>();
+  for (const row of data as ProjectDocumentEvidenceRow[]) {
+    let document = documents.get(row.document_id);
+    if (!document) {
+      document = {
+        documentId: row.document_id,
+        title: row.document_title,
+        documentType: row.document_type,
+        publishedAt: row.published_at,
+        sourcePageUrl: row.source_page_url,
+        fileUrl: row.file_url,
+        pageCount: row.page_count,
+        evidenceNote: row.evidence_note,
+        reviewedAt: row.reviewed_at,
+        claims: []
+      };
+      documents.set(row.document_id, document);
+      (projects[row.project_slug] ??= []).push(document);
+    }
+    document.claims.push({
+      key: row.claim_key,
+      label: row.claim_label,
+      value: row.claim_value,
+      valueKind: row.value_kind,
+      pageNumber: row.page_number,
+      confidence: Number(row.confidence)
+    });
+  }
+  return projects;
 }
 
 type SignalRow = {
