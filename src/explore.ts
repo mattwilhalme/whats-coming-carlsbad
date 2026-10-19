@@ -8,7 +8,9 @@ import {
   businessSignalToMapActivity,
   distanceMiles,
   filterMapActivities,
+  geocodingQuery,
   hasVerifiedPoint,
+  hasUsableAddress,
   projectToMapActivity,
   type MapActivity,
   type MapFilter
@@ -63,6 +65,10 @@ let activities: MapActivity[] = [];
 let activeFilter: MapFilter = "all";
 let nearbyCenter: [number, number] | null = null;
 let searchMarker: Marker | null = null;
+let mapReady = false;
+let dataReady = false;
+let initialFocusHandled = false;
+const initialFocusId = new URLSearchParams(window.location.search).get("focus");
 
 const map = new Map({
   container: "map",
@@ -124,9 +130,58 @@ function formatDate(value: string | null) {
   return new Date(value.includes("T") ? value : `${value}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function selectActivity(activity: MapActivity) {
+async function locateAddress(address: string) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.search = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "us", q: geocodingQuery(address) }).toString();
+  const response = await fetch(url, { headers: { Accept: "application/json", "Accept-Language": "en" } });
+  if (!response.ok) throw new Error("Geocoding is temporarily unavailable.");
+  const [result] = await response.json() as Array<{ lat: string; lon: string }>;
+  if (!result) throw new Error("Address not found in Carlsbad.");
+  const latitude = Number(result.lat), longitude = Number(result.lon);
+  if (latitude < CARLSBAD_BOUNDS.south || latitude > CARLSBAD_BOUNDS.north || longitude < CARLSBAD_BOUNDS.west || longitude > CARLSBAD_BOUNDS.east) throw new Error("That address is outside the Carlsbad search area.");
+  return [longitude, latitude] as [number, number];
+}
+
+function showSearchPoint(center: [number, number], zoom = 16) {
+  searchMarker?.remove();
+  searchMarker = new Marker({ color: "#172d29" }).setLngLat(center).addTo(map);
+  map.flyTo({ center, zoom, pitch: 55 });
+}
+
+async function selectActivity(activity: MapActivity) {
   document.querySelectorAll(".activity-card").forEach((card) => card.classList.toggle("selected", card.getAttribute("data-id") === activity.id));
-  if (hasVerifiedPoint(activity)) map.flyTo({ center: [activity.longitude!, activity.latitude!], zoom: 17, pitch: 60 });
+  if (hasVerifiedPoint(activity)) {
+    map.flyTo({ center: [activity.longitude!, activity.latitude!], zoom: 17, pitch: 60 });
+    status.textContent = `Showing the reviewed location for ${activity.name}.`;
+    return;
+  }
+  if (!hasUsableAddress(activity)) {
+    status.textContent = "This record does not yet include a street address that can be located.";
+    return;
+  }
+  status.textContent = `Locating ${activity.address}…`;
+  try {
+    showSearchPoint(await locateAddress(activity.address));
+    status.textContent = "Address located from the current record. Parcel coordinates remain unverified.";
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : "Address search failed.";
+  }
+}
+
+async function focusInitialActivity() {
+  if (initialFocusHandled || !initialFocusId || !mapReady || !dataReady) return;
+  initialFocusHandled = true;
+  const activity = activities.find((row) => row.id === initialFocusId);
+  if (!activity) {
+    status.textContent = "That record is no longer in the current public dataset.";
+    return;
+  }
+  recordSearch.value = activity.name;
+  render();
+  document.querySelector<HTMLElement>("#activity-panel")!.classList.add("open");
+  document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
+  await selectActivity(activity);
+  document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function render() {
@@ -134,13 +189,14 @@ function render() {
   const radius = Number((document.querySelector<HTMLSelectElement>("#radius")!).value);
   if (nearbyCenter) rows = rows.filter((row) => hasVerifiedPoint(row) && distanceMiles(nearbyCenter!, [row.longitude!, row.latitude!]) <= radius);
   const mapped = rows.filter(hasVerifiedPoint).length;
+  const addressable = rows.filter((row) => !hasVerifiedPoint(row) && hasUsableAddress(row)).length;
   resultCount.textContent = String(rows.length);
   coverage.textContent = nearbyCenter
     ? `${rows.length} verified location${rows.length === 1 ? "" : "s"} within ${radius} mile${radius === 1 ? "" : "s"}.`
-    : `${mapped} mapped · ${rows.length - mapped} awaiting verified coordinates. Unmatched records are listed, never placed approximately.`;
+    : `${mapped} reviewed points · ${addressable} address-searchable · ${rows.length - mapped - addressable} awaiting a usable location.`;
   list.innerHTML = rows.length ? rows.map((activity) => `
     <article class="activity-card" data-id="${escapeHtml(activity.id)}" tabindex="0">
-      <div class="card-title"><span class="category ${activity.category}">${escapeHtml(activity.category)}</span><span class="location-state">${hasVerifiedPoint(activity) ? "Mapped" : "Location pending"}</span></div>
+      <div class="card-title"><span class="category ${activity.category}">${escapeHtml(activity.category)}</span><span class="location-state">${hasVerifiedPoint(activity) ? "Reviewed point" : hasUsableAddress(activity) ? "Address available" : "Location pending"}</span></div>
       <h3>${escapeHtml(activity.name)}</h3><p>${escapeHtml(activity.address)}</p>
       <dl><div><dt>Status</dt><dd>${escapeHtml(activity.status)}</dd></div><div><dt>Latest update</dt><dd>${formatDate(activity.latestUpdate)}</dd></div></dl>
       <p class="uncertainty">${escapeHtml(activity.uncertaintyNote)}</p>
@@ -149,24 +205,26 @@ function render() {
     </article>`).join("") : `<p class="empty">No records match this view.</p>`;
   list.querySelectorAll<HTMLElement>(".activity-card").forEach((card) => {
     const activity = rows.find((row) => row.id === card.dataset.id)!;
-    card.addEventListener("click", () => selectActivity(activity));
-    card.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") selectActivity(activity); });
+    card.addEventListener("click", () => { void selectActivity(activity); });
+    card.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") void selectActivity(activity); });
   });
   syncMap(rows);
 }
 
 map.on("load", () => {
+  mapReady = true;
   const hasBuildings = addBuildingExtrusions(map);
   map.addSource("activity-points", { type: "geojson", data: activityGeoJson([]) });
   map.addLayer({ id: "activity-points", type: "circle", source: "activity-points", paint: { "circle-radius": 9, "circle-color": ["match", ["get", "category"], "restaurants", "#db6f3c", "housing", "#5568d9", "commercial", "#8c5ea8", "#26776b"], "circle-stroke-color": "#fff", "circle-stroke-width": 2 } });
   status.textContent = hasBuildings ? "3D buildings loaded. Verified activity locations appear as colored markers." : "Basemap loaded. 3D geometry is unavailable here; activity markers remain usable.";
   render();
+  void focusInitialActivity();
 });
 map.on("click", "activity-points", (event) => {
   const id = event.features?.[0]?.properties?.id as string | undefined;
   const activity = activities.find((row) => row.id === id);
   if (!activity) return;
-  selectActivity(activity);
+  void selectActivity(activity);
   document.querySelector<HTMLElement>("#activity-panel")!.classList.add("open");
   document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
   document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -177,6 +235,7 @@ map.on("error", (event: ErrorEvent) => { console.error(event.error); status.text
 
 Promise.all([loadBusinessSignals(), loadProjects()]).then(([signals, projects]) => {
   activities = [...signals.map(businessSignalToMapActivity), ...(projects ?? []).map(projectToMapActivity)];
+  dataReady = true;
   const unsupported = new Set(["retail"]);
   document.querySelectorAll<HTMLButtonElement>("[data-filter]").forEach((button) => {
     const value = button.dataset.filter as MapFilter;
@@ -186,6 +245,7 @@ Promise.all([loadBusinessSignals(), loadProjects()]).then(([signals, projects]) 
     }
   });
   render();
+  void focusInitialActivity();
 }).catch((error) => {
   console.error(error);
   status.textContent = isSupabaseConfigured ? "Live records could not be loaded. The map remains available." : "Connect Supabase to show live records.";
@@ -212,18 +272,8 @@ document.querySelector<HTMLFormElement>("#nearby-search")!.addEventListener("sub
   if (!query) return;
   status.textContent = "Locating address…";
   try {
-    const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.search = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "us", q: `${query}, Carlsbad, California` }).toString();
-    const response = await fetch(url, { headers: { Accept: "application/json", "Accept-Language": "en" } });
-    if (!response.ok) throw new Error("Geocoding is temporarily unavailable.");
-    const [result] = await response.json() as Array<{ lat: string; lon: string }>;
-    if (!result) throw new Error("Address not found in Carlsbad.");
-    const latitude = Number(result.lat), longitude = Number(result.lon);
-    if (latitude < CARLSBAD_BOUNDS.south || latitude > CARLSBAD_BOUNDS.north || longitude < CARLSBAD_BOUNDS.west || longitude > CARLSBAD_BOUNDS.east) throw new Error("That address is outside the Carlsbad search area.");
-    nearbyCenter = [longitude, latitude];
-    searchMarker?.remove();
-    searchMarker = new Marker({ color: "#172d29" }).setLngLat(nearbyCenter).addTo(map);
-    map.flyTo({ center: nearbyCenter, zoom: 14.5, pitch: 45 });
+    nearbyCenter = await locateAddress(query);
+    showSearchPoint(nearbyCenter, 14.5);
     render();
     status.textContent = "Address located. Nearby results use geographic distance from verified record coordinates.";
   } catch (error) {

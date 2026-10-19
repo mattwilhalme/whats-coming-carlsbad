@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { businessSignalToMapActivity, distanceMiles, filterMapActivities, hasVerifiedPoint, projectToMapActivity } from "../src/map-data.ts";
+import { businessSignalToMapActivity, distanceMiles, explorerHref, filterMapActivities, geocodingQuery, hasUsableAddress, hasVerifiedPoint, projectToMapActivity } from "../src/map-data.ts";
 
 const signal = {
   id: "abc-1", displayName: "Example Kitchen", legalApplicant: null, address: "100 Main St", suite: null,
@@ -54,4 +54,21 @@ test("filters by supported category and text", () => {
 test("calculates geographic distance in miles", () => {
   const miles = distanceMiles([-117.3506, 33.1581], [-117.3406, 33.1581]);
   assert.ok(miles > 0.55 && miles < 0.65);
+});
+
+test("creates explorer deep links for records with current addresses", () => {
+  const row = businessSignalToMapActivity(signal);
+  assert.equal(hasUsableAddress(row), true);
+  assert.equal(explorerHref(row), "./explore.html?focus=signal%3Aabc-1");
+  assert.equal(geocodingQuery("2235 Faraday Ave. Ste Q, Carlsbad, CA 92008"), "2235 Faraday Ave., Carlsbad, CA 92008");
+});
+
+test("does not claim vague project locations are address-searchable", () => {
+  const row = projectToMapActivity({ id: "p2", slug: "unknown", name: "Unknown", category: "commercial", locationText: "Address not yet verified", proposedUnits: null, affordableUnits: null, commercialSqft: null, status: "Researching", statusAsOf: "2026-10-01", evidenceLabel: "Notice", sourceUrl: "https://example.gov/notice" });
+  assert.equal(hasUsableAddress(row), false);
+});
+
+test("treats a numbered project address range as address-searchable", () => {
+  const row = projectToMapActivity({ id: "p3", slug: "range", name: "Address range", category: "mixed_use", locationText: "2715–2729 Carlsbad Boulevard", proposedUnits: 15, affordableUnits: 2, commercialSqft: 8240, status: "Proposed", statusAsOf: "2026-10-01", evidenceLabel: "Developer page", sourceUrl: "https://example.com/project" });
+  assert.equal(hasUsableAddress(row), true);
 });
