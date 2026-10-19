@@ -86,6 +86,24 @@ export function hasVerifiedPoint(activity: MapActivity) {
   return Number.isFinite(activity.latitude) && Number.isFinite(activity.longitude);
 }
 
+export function hasUsableAddress(activity: MapActivity) {
+  const address = activity.address.trim();
+  return /^\d+(?:\s|[-–])/.test(address) && !/address not yet verified/i.test(address);
+}
+
+export function explorerHref(activity: MapActivity) {
+  return `./explore.html?focus=${encodeURIComponent(activity.id)}`;
+}
+
+export function geocodingQuery(address: string) {
+  const [street, ...locality] = address.split(",");
+  const withoutSuite = street
+    .replace(/\s+(?:#|STE\.?|SUITE|UNIT)\s*[A-Z0-9][A-Z0-9& -]*$/i, "")
+    .trim();
+  const suffix = locality.join(",").trim();
+  return suffix ? `${withoutSuite}, ${suffix}` : `${withoutSuite}, Carlsbad, California`;
+}
+
 export function distanceMiles(a: [number, number], b: [number, number]) {
   const radians = (degrees: number) => degrees * Math.PI / 180;
   const dLat = radians(b[1] - a[1]);

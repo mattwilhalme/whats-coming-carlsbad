@@ -3,6 +3,7 @@ import { seedProjects } from "./seed-projects";
 import LocationMap from "./LocationMap";
 import { isSupabaseConfigured, loadBusinessSignals, loadIngestionHealth, loadProjectDocumentEvidence, loadProjects } from "./supabase";
 import type { BusinessSignal, IngestionHealth, PlanningDocumentEvidence, Project } from "./types";
+import { businessSignalToMapActivity, explorerHref, hasUsableAddress, projectToMapActivity } from "./map-data";
 
 const labels = { all: "All", apartments: "Apartments", "mixed-use": "Mixed use", commercial: "Commercial" } as const;
 const signalLabels = { all: "Current signals", pending_application: "Pending applications", recently_changed: "Recently changed" } as const;
@@ -119,6 +120,7 @@ export default function App() {
             <div className="signal-context">
               <p className="uncertainty">{signal.uncertaintyNote}</p>
               <SignalDetails signal={signal} />
+              <a className="source-link map-link" href={explorerHref(businessSignalToMapActivity(signal))}>View address in 3D explorer<span aria-hidden="true">→</span></a>
               <a className="source-link" href={signal.sourceUrl} target="_blank" rel="noreferrer">View official ABC source<span aria-hidden="true">↗</span></a>
             </div>
           </article>)}
@@ -132,7 +134,9 @@ export default function App() {
           {Object.entries(labels).map(([value, label]) => <button key={value} className={category === value ? "active" : ""} onClick={() => setCategory(value as keyof typeof labels)}>{label}</button>)}
         </div>
         <div className="grid">
-          {visible.map((project) => <article className="card" key={project.id}>
+          {visible.map((project) => {
+            const mapActivity = projectToMapActivity(project);
+            return <article className="card" key={project.id}>
             <div className="card-top"><span className={`category ${project.category}`}>{labels[project.category]}</span><time dateTime={project.statusAsOf}>{formatDate(project.statusAsOf)}</time></div>
             <h3>{project.name}</h3><p className="location">{project.locationText}</p>
             <dl>
@@ -142,8 +146,9 @@ export default function App() {
             </dl>
             <div className="status"><span></span><p><small>Documented status</small>{project.status}</p></div>
             <ProjectEvidence documents={documentEvidence[project.slug] ?? []} />
+            {hasUsableAddress(mapActivity) && <a className="source-link map-link" href={explorerHref(mapActivity)}>View location in 3D explorer<span aria-hidden="true">→</span></a>}
             <a className="source-link" href={project.sourceUrl} target="_blank" rel="noreferrer">View {project.evidenceLabel}<span aria-hidden="true">↗</span></a>
-          </article>)}
+          </article>})}
           {!visible.length && <p className="empty">No projects match that search yet.</p>}
         </div>
       </section>
