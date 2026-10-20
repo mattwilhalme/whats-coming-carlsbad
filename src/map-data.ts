@@ -22,6 +22,9 @@ export type MapActivity = {
   locationSourceUrl: string | null;
   locationMatchRationale: string | null;
   locationReviewedAt: string | null;
+  recordKind?: string;
+  milestone?: string;
+  detailFacts?: string[];
 };
 
 export type MapFilter = "all" | MapCategory;
@@ -29,6 +32,9 @@ export type MapFilter = "all" | MapCategory;
 export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity {
   return {
     id: `signal:${signal.id}`,
+    recordKind: signal.signalKind === "recently_changed" ? "Changed licensing record" : signal.isBaseline ? "Baseline licensing record" : "Newly detected licensing record",
+    milestone: signal.dehqCheck ? `${signal.dehqCheck.recordType}: ${signal.dehqCheck.status}` : undefined,
+    detailFacts: [signal.legalApplicant ? `Legal applicant: ${signal.legalApplicant}` : "", `License types: ${signal.licenseTypes.join(", ")}`, signal.dehqCheck ? `Plan check ${signal.dehqCheck.recordNumber} · ${signal.dehqCheck.openedDate}` : ""].filter(Boolean),
     category: "restaurants",
     name: signal.displayName,
     address: signal.fullAddress,
@@ -53,6 +59,9 @@ export function businessSignalToMapActivity(signal: BusinessSignal): MapActivity
 export function projectToMapActivity(project: Project): MapActivity {
   return {
     id: `project:${project.id}`,
+    recordKind: "Development project",
+    milestone: project.status,
+    detailFacts: [project.proposedUnits !== null ? `${project.proposedUnits} proposed homes` : "", project.affordableUnits !== null ? `${project.affordableUnits} affordable homes` : "", project.commercialSqft !== null ? `${project.commercialSqft.toLocaleString()} commercial sq ft` : ""].filter(Boolean),
     category: project.category === "apartments" ? "housing" : "commercial",
     name: project.name,
     address: project.locationText,
@@ -113,3 +122,4 @@ export function distanceMiles(a: [number, number], b: [number, number]) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
   return 3958.7613 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
+
