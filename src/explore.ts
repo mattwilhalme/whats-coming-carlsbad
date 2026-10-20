@@ -106,6 +106,7 @@ const mobile = createMobileExplorer(id => {
   map.resize();
   // Keep the geographic center stable when the pitched viewport changes shape.
   if (!moving) map.jumpTo({ center });
+  map.redraw();
 });
 const dialog = document.querySelector<HTMLDialogElement>("#project-dialog")!;
 dialog.querySelector('button')!.addEventListener('click', () => dialog.close());

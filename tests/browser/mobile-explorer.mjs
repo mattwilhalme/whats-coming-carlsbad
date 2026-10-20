@@ -135,7 +135,8 @@ try {
       const { explorerMap: map } = await import('/src/explore.ts');
       const point = map.project([-117.3506 + 2 * .002, 33.1581]);
       const canvas = map.getCanvas();
-      return point.x > 16 && point.x < canvas.clientWidth - 16 && point.y > 16 && point.y < canvas.clientHeight - 16;
+      return point.x > 16 && point.x < canvas.clientWidth - 16 && point.y > 16 && point.y < canvas.clientHeight - 16
+        && map.queryRenderedFeatures([point.x, point.y], { layers: ['activity-points'] }).some(feature => feature.properties.id === 'signal:fixture-2');
     });
   }
   await page.setViewportSize({ width: 320, height: 568 }); await assertShare(50);
