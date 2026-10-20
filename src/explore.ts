@@ -74,7 +74,8 @@ let dataReady = false;
 let initialFocusHandled = false;
 const initialFocusId = new URLSearchParams(window.location.search).get("focus");
 
-const map = new Map({
+function initializeMap() {
+ try { return new Map({
   container: "map",
   style: MAP_STYLE,
   center: [-117.3506, 33.1581],
@@ -84,13 +85,21 @@ const map = new Map({
   canvasContextAttributes: { antialias: true },
   maxBounds: [[-117.58, 32.92], [-117.05, 33.35]]
 });
-map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
-map.addControl(new ScaleControl({ unit: "imperial" }), "bottom-right");
+ } catch (error) {
+   console.warn("3D map unavailable", error);
+   status.textContent = "This browser cannot display the 3D map. Project cards and sources remain available.";
+   document.querySelector('#map')!.innerHTML = '<p class="map-unavailable">3D map unavailable in this browser.<br>Browse the public records below.</p>';
+   return null;
+ }
+}
+const map = initializeMap();
+map?.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
+map?.addControl(new ScaleControl({ unit: "imperial" }), "bottom-right");
 
 const mobile = createMobileExplorer(id => {
   const activity = visibleRows.find(row => row.id === id);
   if (activity) void selectActivity(activity, false);
-}, () => map.resize());
+}, () => map?.resize());
 const dialog = document.querySelector<HTMLDialogElement>("#project-dialog")!;
 dialog.querySelector('button')!.addEventListener('click', () => dialog.close());
 function openDetails(card: HTMLElement) {
@@ -102,7 +111,7 @@ function openDetails(card: HTMLElement) {
   dialog.showModal();
 }
 function highlightSelection() {
-  if (!mapReady || !map.getLayer("activity-points")) return;
+  if (!map || !mapReady || !map.getLayer("activity-points")) return;
   map.setPaintProperty("activity-points", "circle-radius", ["case", ["==", ["get", "id"], activeId ?? ""], 14, 9]);
   map.setPaintProperty("activity-points", "circle-stroke-color", ["case", ["==", ["get", "id"], activeId ?? ""], "#172d29", "#fff"]);
   map.setPaintProperty("activity-points", "circle-stroke-width", ["case", ["==", ["get", "id"], activeId ?? ""], 4, 2]);
@@ -142,7 +151,7 @@ function activityGeoJson(rows: MapActivity[]): FeatureCollection {
 }
 
 function syncMap(rows: MapActivity[]) {
-  const source = map.getSource("activity-points") as GeoJSONSource | undefined;
+  const source = map?.getSource("activity-points") as GeoJSONSource | undefined;
   source?.setData(activityGeoJson(rows));
 }
 
@@ -168,6 +177,7 @@ async function locateAddress(address: string) {
 }
 
 function showSearchPoint(center: [number, number], zoom = 16) {
+  if (!map) return;
   searchMarker?.remove();
   searchMarker = new Marker({ color: "#172d29" }).setLngLat(center).addTo(map);
   map.flyTo({ center, zoom, pitch: 55, duration: reducedMotion.matches ? 0 : 650 });
@@ -180,6 +190,7 @@ async function selectActivity(activity: MapActivity, scroll = true) {
   highlightSelection();
   document.querySelectorAll(".activity-card").forEach((card) => card.classList.toggle("selected", card.getAttribute("data-id") === activity.id));
   if (hasVerifiedPoint(activity)) {
+    if (!map) { status.textContent = `Map unavailable. Reviewed location for ${activity.name}: ${activity.address}.`; return; }
     if (!mobile.isMobile() || changed) map.flyTo({
       center: [activity.longitude!, activity.latitude!],
       zoom: mobile.isMobile() ? Math.max(15.5, Math.min(17, map.getZoom())) : 17,
@@ -264,7 +275,8 @@ function render() {
   if (mobile.isMobile() && !selected && rows.length && (!initialFocusId || initialFocusHandled) && !nearbyCenter) void selectActivity(rows[0]);
 }
 
-map.on("load", () => {
+map?.on("load", () => {
+  if (!map) return;
   mapReady = true;
   const hasBuildings = addBuildingExtrusions(map);
   map.addSource("activity-points", { type: "geojson", data: activityGeoJson([]) });
@@ -273,7 +285,7 @@ map.on("load", () => {
   render();
   void focusInitialActivity();
 });
-map.on("click", "activity-points", (event) => {
+map?.on("click", "activity-points", (event) => {
   const id = event.features?.[0]?.properties?.id as string | undefined;
   const activity = activities.find((row) => row.id === id);
   if (!activity) return;
@@ -282,9 +294,9 @@ map.on("click", "activity-points", (event) => {
   if (!mobile.isMobile()) document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
   if (!mobile.isMobile()) document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: reducedMotion.matches ? "instant" : "smooth", block: "nearest" });
 });
-map.on("mouseenter", "activity-points", () => { map.getCanvas().style.cursor = "pointer"; });
-map.on("mouseleave", "activity-points", () => { map.getCanvas().style.cursor = ""; });
-map.on("error", (event: ErrorEvent) => { console.error(event.error); status.textContent = "A map resource failed to load. The evidence list remains available."; });
+map?.on("mouseenter", "activity-points", () => { if (map) map.getCanvas().style.cursor = "pointer"; });
+map?.on("mouseleave", "activity-points", () => { if (map) map.getCanvas().style.cursor = ""; });
+map?.on("error", (event: ErrorEvent) => { console.error(event.error); status.textContent = "A map resource failed to load. The evidence list remains available."; });
 
 Promise.all([loadBusinessSignals(), loadProjects()]).then(([signals, projects]) => {
   activities = [...signals.map(businessSignalToMapActivity), ...(projects ?? []).map(projectToMapActivity)];

@@ -43,3 +43,55 @@ A marker should be used for a verified point when a building match is not review
 ## Next data step
 
 The reviewed location workflow is now persisted with coordinate provenance, APN, match method, confidence, review note, and review timestamp. The next functional milestone is reviewed parcel polygons and building-footprint matching for the seven remaining ABC candidates and six development projects.
+
+
+## Mobile split explorer (October 2026)
+
+Mobile (up to 800px, plus short coarse-pointer landscape viewports) uses a true
+map/card split: Browse 50/50, Explore 65/35, Details 20/80. Drag the dedicated
+handle or use the three mode buttons; the handle also supports arrow keys and
+Home/End. The MapLibre canvas follows its container with ResizeObserver,
+coalesced to an animation frame. Dynamic viewport units and safe-area insets
+keep browser chrome and home indicators out of the controls.
+
+The carousel uses native overflow scrolling and CSS snap points for touch
+momentum. A small mouse-drag adapter, previous/next buttons and arrow keys
+provide other input paths. Selection is shared by card settling, card clicks
+and marker clicks. A programmatic target suppresses intermediate scroll
+selections; selecting an already active card does not restart its mobile camera
+flight. Camera movement preserves bearing and pitch, uses a bounded zoom, and
+stops animating when reduced motion is requested. Markers use a larger radius
+and darker ring for active selection. The map occupies a separate grid row, so
+camera centers are never hidden behind the cards.
+
+Mobile selection never geocodes an unlocated record. Explicit address search
+continues to use Nominatim. Existing `?focus=signal:…` and `?focus=project:…`
+links activate the matching card without filtering away its neighbors. Full
+record details open in a native dialog; closing it retains selection, scroll,
+filters, panel size and camera. Source links open separately. No images, dates,
+building associations or opening outcomes are synthesized. Current source
+models do not provide project imagery or verified project-to-building polygons;
+3D buildings remain geographic context, with selection on reviewed point markers.
+
+The desktop sidebar and address form remain in their existing layout. Browsers
+without WebGL2 can still browse records and open evidence; the map area explains
+the limitation instead of aborting record loading.
+
+### Verification
+
+`npm test`, `npm run typecheck`, and `npm run build` are the baseline checks.
+`node tests/browser/mobile-explorer.mjs` runs the Chromium mobile-emulation
+suite after `npx playwright-core install --with-deps chromium`. The script starts
+Vite with dummy credentials and intercepts all Supabase, map style and geocoding
+requests. It uses real MapLibre rendering with a fixture background; it does not
+contact or mutate production data. Coverage includes five actual touch swipes,
+camera and highlight assertions, a rendered marker tap, vertical panel dragging,
+partial-panel swipes, details return, absent coordinates/images, filters, empty
+results, address search, focus deep links, narrow and rotated viewports, reduced
+motion, desktop sidebar behavior and missing-WebGL recovery. CI uploads
+screenshots as `mobile-explorer-screenshots`.
+
+This is browser emulation, not physical iPhone/Android or Safari validation.
+Native rubber-banding varies by browser. Haptics are intentionally omitted;
+there is no animation dependency or unsupported frame-rate claim. The existing
+MapLibre production chunk still triggers Vite's bundle-size advisory.

@@ -58,3 +58,4 @@
  .evidence-label{font-weight:750;color:#175e56}.project-dialog .mobile-detail-facts{display:block;font-size:.85rem}
  .search-row input{font-size:16px}
 }
+.map-unavailable{position:absolute;inset:0;display:grid;align-content:center;text-align:center;padding:24px;color:#536d65;font-size:.85rem;line-height:1.6}

@@ -153,6 +153,21 @@ try {
   await wide.locator('.activity-card').nth(2).click(); await selected(wide, 'signal:fixture-2');
   await cameraAt(wide, signals[2].longitude);
   await wide.screenshot({ path: 'artifacts/mobile-explorer/desktop.png' });
+  // WebGL is optional for reading evidence: simulate an unsupported GPU.
+  const unavailable = await context.newPage();
+  await unavailable.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+      if (String(type).startsWith('webgl')) return null;
+      return original.call(this, type, ...args);
+    };
+  });
+  await unavailable.goto(`${base}/explore.html`);
+  await unavailable.waitForSelector('#activity-list .activity-card');
+  assert.equal(await unavailable.locator('#activity-list .activity-card').count(), 7);
+  assert.match(await unavailable.locator('#map').innerText(), /3D map unavailable/);
+  await unavailable.getByRole('button', { name: 'Next project', exact: true }).click();
+  await selected(unavailable, 'signal:fixture-1');
   assert.deepEqual(errors, []);
   console.log('PASS: five touch swipes, map camera/highlight, real marker tap, panel drags, partial panel swipe, details return, missing coordinates/images, filters/search, focus deep link, narrow/rotated viewports, reduced motion and desktop. Chromium mobile emulation, not physical iOS/Android.');
 } finally {
