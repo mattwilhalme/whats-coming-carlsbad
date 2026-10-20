@@ -1,0 +1,116 @@
+{
+  "indexes": [
+    "https://www.carlsbadca.gov/city-hall/meetings-agendas/boards-commissions/planning-commission"
+  ],
+  "documents": [
+    {
+      "file_url": "https://ceqanet.lci.ca.gov/2026100315/Attachment/vWzhlR",
+      "source_page_url": "https://ceqanet.lci.ca.gov/2026100315",
+      "title": "Fairfield Apartments at Bressi Ranch CEQA exemption evaluation checklist",
+      "document_type": "environmental_document",
+      "published_at": null,
+      "review": {
+        "sha256": "e17f9be3ff436de73adecf5428c319c40324d3da18160eadf5c915c4944dde85",
+        "project_slug": "fairfield-apartments-bressi-ranch",
+        "claims": [
+          {
+            "claim_key": "case_number",
+            "claim_label": "Case number",
+            "claim_value": "SDP 2024-0009",
+            "value_kind": "text",
+            "page_number": 1,
+            "evidence_text": "SDP 2024-0009"
+          },
+          {
+            "claim_key": "project_location",
+            "claim_label": "Location",
+            "claim_value": "South side of Palomar Airport Road and east and south sides of Gateway Road",
+            "value_kind": "text",
+            "page_number": 1,
+            "evidence_text": "on the south side of Palomar Airport Road and east and south sides of Gateway Road."
+          },
+          {
+            "claim_key": "parcel_numbers",
+            "claim_label": "APNs as printed",
+            "claim_value": "213-263-19, -20",
+            "value_kind": "text",
+            "page_number": 1,
+            "evidence_text": "APNs 213-263-19, -20"
+          },
+          {
+            "claim_key": "proposed_units",
+            "claim_label": "Homes",
+            "claim_value": "320",
+            "value_kind": "integer",
+            "page_number": 2,
+            "evidence_text": "development of a 320-unit"
+          },
+          {
+            "claim_key": "affordable_units",
+            "claim_label": "Affordable homes",
+            "claim_value": "43",
+            "value_kind": "integer",
+            "page_number": 2,
+            "evidence_text": "43 units will be deed restricted as affordable to lower income households"
+          }
+        ],
+        "events": []
+      }
+    },
+    {
+      "file_url": "https://ceqanet.lci.ca.gov/2026100315/Attachment/mpHQ15",
+      "source_page_url": "https://ceqanet.lci.ca.gov/2026100315",
+      "title": "Fairfield Apartments at Bressi Ranch Notice of Exemption",
+      "document_type": "notice_of_exemption",
+      "published_at": "2026-10-09",
+      "review": {
+        "sha256": "7792ead26e0b158fccd54b24ed039a6a8360c0cd6bd71b3fcfcdb1eb06c3a629",
+        "project_slug": "fairfield-apartments-bressi-ranch",
+        "claims": [
+          {
+            "claim_key": "proposed_units",
+            "claim_label": "Homes",
+            "claim_value": "320",
+            "value_kind": "integer",
+            "page_number": 1,
+            "evidence_text": "development of a 320-unit"
+          },
+          {
+            "claim_key": "affordable_units",
+            "claim_label": "Affordable homes",
+            "claim_value": "43",
+            "value_kind": "integer",
+            "page_number": 1,
+            "evidence_text": "43 units will be deed restricted as affordable to lower income households"
+          },
+          {
+            "claim_key": "parcel_numbers",
+            "claim_label": "APNs as printed",
+            "claim_value": "213-263-19, -20",
+            "value_kind": "text",
+            "page_number": 1,
+            "evidence_text": "APNs 213-263-19, -20"
+          },
+          {
+            "claim_key": "ceqa_document",
+            "claim_label": "CEQA document",
+            "claim_value": "Notice of Exemption",
+            "value_kind": "text",
+            "page_number": 1,
+            "evidence_text": "NOTICE OF EXEMPTION"
+          }
+        ],
+        "events": [
+          {
+            "event_type": "ceqa_exemption_posted",
+            "event_date": "2026-10-09",
+            "page_number": 1,
+            "evidence_text": "NOTICE OF EXEMPTION",
+            "summary": "Fairfield Apartments at Bressi Ranch Notice of Exemption posted on CEQAnet.",
+            "review_note": "Posting date verified on the official CEQAnet source page; PDF signature date visually verified as October 9, 2026. This is not a finding of Planning Commission approval on October 7."
+          }
+        ]
+      }
+    }
+  ]
+}
