@@ -3,6 +3,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { FeatureCollection } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./explore.css";
+import { createMobileExplorer } from "./mobile-explorer";
 import { isSupabaseConfigured, loadBusinessSignals, loadProjects } from "./supabase";
 import {
   businessSignalToMapActivity,
@@ -43,7 +44,7 @@ root.innerHTML = `
     </section>
     <aside id="activity-panel" class="activity-panel">
       <div class="panel-head"><div><p class="eyebrow">Verified sources</p><h2>Development activity</h2></div><strong id="result-count">0</strong></div>
-      <div id="filters" class="filters" role="group" aria-label="Filter map activity">
+      <div id="panel-controls" class="panel-controls"><div id="filters" class="filters" role="group" aria-label="Filter map activity">
         <button type="button" data-filter="all" aria-pressed="true">All activity</button>
         <button type="button" data-filter="restaurants" aria-pressed="false">Restaurants</button>
         <button type="button" data-filter="retail" aria-pressed="false">Retail</button>
@@ -52,9 +53,9 @@ root.innerHTML = `
       </div>
       <label class="list-search"><span>Search records</span><input id="record-search" type="search" placeholder="Name, address or status"></label>
       <p id="coverage" class="coverage"></p>
-      <div id="activity-list" class="activity-list"></div>
+      </div><div id="activity-list" class="activity-list" aria-label="Development projects" aria-busy="true"><p class="empty">Loading public records…</p></div>
     </aside>
-  </main>`;
+  </main><dialog id="project-dialog" class="project-dialog" aria-label="Project details"><button type="button">Close details</button><div class="dialog-content"></div></dialog>`;
 
 const status = document.querySelector<HTMLDivElement>("#map-status")!;
 const list = document.querySelector<HTMLDivElement>("#activity-list")!;
@@ -62,6 +63,9 @@ const coverage = document.querySelector<HTMLParagraphElement>("#coverage")!;
 const resultCount = document.querySelector<HTMLElement>("#result-count")!;
 const recordSearch = document.querySelector<HTMLInputElement>("#record-search")!;
 let activities: MapActivity[] = [];
+let activeId: string | null = null;
+let visibleRows: MapActivity[] = [];
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let activeFilter: MapFilter = "all";
 let nearbyCenter: [number, number] | null = null;
 let searchMarker: Marker | null = null;
@@ -82,6 +86,27 @@ const map = new Map({
 });
 map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
 map.addControl(new ScaleControl({ unit: "imperial" }), "bottom-right");
+
+const mobile = createMobileExplorer(id => {
+  const activity = visibleRows.find(row => row.id === id);
+  if (activity) void selectActivity(activity, false);
+}, () => map.resize());
+const dialog = document.querySelector<HTMLDialogElement>("#project-dialog")!;
+dialog.querySelector('button')!.addEventListener('click', () => dialog.close());
+function openDetails(card: HTMLElement) {
+  const copy = card.cloneNode(true) as HTMLElement;
+  copy.removeAttribute('tabindex');
+  copy.removeAttribute('aria-current');
+  copy.querySelector('.mobile-details-button')?.remove();
+  dialog.querySelector('.dialog-content')!.replaceChildren(copy);
+  dialog.showModal();
+}
+function highlightSelection() {
+  if (!mapReady || !map.getLayer("activity-points")) return;
+  map.setPaintProperty("activity-points", "circle-radius", ["case", ["==", ["get", "id"], activeId ?? ""], 14, 9]);
+  map.setPaintProperty("activity-points", "circle-stroke-color", ["case", ["==", ["get", "id"], activeId ?? ""], "#172d29", "#fff"]);
+  map.setPaintProperty("activity-points", "circle-stroke-width", ["case", ["==", ["get", "id"], activeId ?? ""], 4, 2]);
+}
 
 function addBuildingExtrusions(target: MapLibreMap) {
   const layers = (target.getStyle() as StyleSpecification).layers ?? [];
@@ -145,14 +170,27 @@ async function locateAddress(address: string) {
 function showSearchPoint(center: [number, number], zoom = 16) {
   searchMarker?.remove();
   searchMarker = new Marker({ color: "#172d29" }).setLngLat(center).addTo(map);
-  map.flyTo({ center, zoom, pitch: 55 });
+  map.flyTo({ center, zoom, pitch: 55, duration: reducedMotion.matches ? 0 : 650 });
 }
 
-async function selectActivity(activity: MapActivity) {
+async function selectActivity(activity: MapActivity, scroll = true) {
+  const changed = activeId !== activity.id;
+  activeId = activity.id;
+  mobile.select(activity.id, scroll);
+  highlightSelection();
   document.querySelectorAll(".activity-card").forEach((card) => card.classList.toggle("selected", card.getAttribute("data-id") === activity.id));
   if (hasVerifiedPoint(activity)) {
-    map.flyTo({ center: [activity.longitude!, activity.latitude!], zoom: 17, pitch: 60 });
+    if (!mobile.isMobile() || changed) map.flyTo({
+      center: [activity.longitude!, activity.latitude!],
+      zoom: mobile.isMobile() ? Math.max(15.5, Math.min(17, map.getZoom())) : 17,
+      pitch: mobile.isMobile() ? map.getPitch() : 60,
+      bearing: map.getBearing(), duration: reducedMotion.matches ? 0 : 650
+    });
     status.textContent = `Showing the reviewed location for ${activity.name}.`;
+    return;
+  }
+  if (mobile.isMobile()) {
+    status.textContent = `Location pending for ${activity.name}. No reviewed coordinates; map position preserved.`;
     return;
   }
   if (!hasUsableAddress(activity)) {
@@ -169,25 +207,27 @@ async function selectActivity(activity: MapActivity) {
 }
 
 async function focusInitialActivity() {
-  if (initialFocusHandled || !initialFocusId || !mapReady || !dataReady) return;
+  if (initialFocusHandled || !initialFocusId || !dataReady) return;
   initialFocusHandled = true;
   const activity = activities.find((row) => row.id === initialFocusId);
   if (!activity) {
     status.textContent = "That record is no longer in the current public dataset.";
     return;
   }
-  recordSearch.value = activity.name;
+  // Keep all cards available when arriving at a project deep link.
+  if (!mobile.isMobile()) recordSearch.value = activity.name;
   render();
   document.querySelector<HTMLElement>("#activity-panel")!.classList.add("open");
-  document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
+  if (!mobile.isMobile()) document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
   await selectActivity(activity);
-  document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (!mobile.isMobile()) document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: reducedMotion.matches ? "instant" : "smooth", block: "nearest" });
 }
 
 function render() {
   let rows = filterMapActivities(activities, activeFilter, recordSearch.value);
   const radius = Number((document.querySelector<HTMLSelectElement>("#radius")!).value);
   if (nearbyCenter) rows = rows.filter((row) => hasVerifiedPoint(row) && distanceMiles(nearbyCenter!, [row.longitude!, row.latitude!]) <= radius);
+  visibleRows = rows;
   const mapped = rows.filter(hasVerifiedPoint).length;
   const addressable = rows.filter((row) => !hasVerifiedPoint(row) && hasUsableAddress(row)).length;
   resultCount.textContent = String(rows.length);
@@ -200,15 +240,28 @@ function render() {
       <h3>${escapeHtml(activity.name)}</h3><p>${escapeHtml(activity.address)}</p>
       <dl><div><dt>Status</dt><dd>${escapeHtml(activity.status)}</dd></div><div><dt>Latest update</dt><dd>${formatDate(activity.latestUpdate)}</dd></div></dl>
       <p class="uncertainty">${escapeHtml(activity.uncertaintyNote)}</p>
+      <div class="mobile-card-context"><span class="evidence-label">${escapeHtml(activity.sourceLabel)}</span><p>${escapeHtml(activity.recordKind ?? "Public record")}</p>${activity.milestone ? `<p><strong>Documented milestone</strong> · ${escapeHtml(activity.milestone)}</p>` : ""}</div>
+      <button type="button" class="mobile-details-button">Full project details →</button><div class="card-evidence">
+      <div class="mobile-detail-facts">${(activity.detailFacts ?? []).map(fact => `<p>${escapeHtml(fact)}</p>`).join("")}</div>
       ${activity.apn ? `<div class="location-evidence"><strong>Verified address point</strong><span>APN ${escapeHtml(activity.apn)} · reviewed ${formatDate(activity.locationReviewedAt)}</span><small>${escapeHtml(activity.locationMatchRationale ?? "")}</small><a href="${escapeHtml(activity.locationSourceUrl ?? "")}" target="_blank" rel="noreferrer">View SanGIS source ↗</a></div>` : ""}
-      <a href="${escapeHtml(activity.sourceUrl)}" target="_blank" rel="noreferrer">View ${escapeHtml(activity.sourceLabel)} ↗</a>
+      <a href="${escapeHtml(activity.sourceUrl)}" target="_blank" rel="noreferrer">View ${escapeHtml(activity.sourceLabel)} ↗</a></div>
     </article>`).join("") : `<p class="empty">No records match this view.</p>`;
   list.querySelectorAll<HTMLElement>(".activity-card").forEach((card) => {
     const activity = rows.find((row) => row.id === card.dataset.id)!;
-    card.addEventListener("click", () => { void selectActivity(activity); });
-    card.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") void selectActivity(activity); });
+    card.addEventListener("click", event => {
+      if ((event.target as HTMLElement).closest("a")) return;
+      void selectActivity(activity);
+      if ((event.target as HTMLElement).closest(".mobile-details-button")) openDetails(card);
+    });
+    card.addEventListener("keydown", (event) => { if (event.target === card && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); void selectActivity(activity); } });
   });
+  list.setAttribute("aria-busy", String(!dataReady));
   syncMap(rows);
+  const selected = rows.find(row => row.id === activeId);
+  if (!selected) activeId = null;
+  mobile.refresh(activeId);
+  highlightSelection();
+  if (mobile.isMobile() && !selected && rows.length && (!initialFocusId || initialFocusHandled) && !nearbyCenter) void selectActivity(rows[0]);
 }
 
 map.on("load", () => {
@@ -226,8 +279,8 @@ map.on("click", "activity-points", (event) => {
   if (!activity) return;
   void selectActivity(activity);
   document.querySelector<HTMLElement>("#activity-panel")!.classList.add("open");
-  document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
-  document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (!mobile.isMobile()) document.querySelector<HTMLButtonElement>("#list-toggle")!.setAttribute("aria-expanded", "true");
+  if (!mobile.isMobile()) document.querySelector<HTMLElement>(`.activity-card[data-id="${CSS.escape(activity.id)}"]`)?.scrollIntoView({ behavior: reducedMotion.matches ? "instant" : "smooth", block: "nearest" });
 });
 map.on("mouseenter", "activity-points", () => { map.getCanvas().style.cursor = "pointer"; });
 map.on("mouseleave", "activity-points", () => { map.getCanvas().style.cursor = ""; });
@@ -248,6 +301,8 @@ Promise.all([loadBusinessSignals(), loadProjects()]).then(([signals, projects]) 
   void focusInitialActivity();
 }).catch((error) => {
   console.error(error);
+  list.setAttribute("aria-busy", "false");
+  list.innerHTML = `<p class="empty">Records are unavailable. Please reload to try again.</p>`;
   status.textContent = isSupabaseConfigured ? "Live records could not be loaded. The map remains available." : "Connect Supabase to show live records.";
 });
 
@@ -261,6 +316,13 @@ recordSearch.addEventListener("input", render);
 document.querySelector<HTMLSelectElement>("#radius")!.addEventListener("change", render);
 document.querySelector<HTMLButtonElement>("#list-toggle")!.addEventListener("click", (event) => {
   const button = event.currentTarget as HTMLButtonElement;
+  if (mobile.isMobile()) {
+    const open = document.querySelector('.explorer-layout')!.classList.toggle('search-open');
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-controls', 'nearby-search');
+    if (open) document.querySelector<HTMLInputElement>('#address')!.focus();
+    return;
+  }
   const panel = document.querySelector<HTMLElement>("#activity-panel")!;
   panel.classList.toggle("open");
   button.setAttribute("aria-expanded", String(panel.classList.contains("open")));
@@ -273,6 +335,8 @@ document.querySelector<HTMLFormElement>("#nearby-search")!.addEventListener("sub
   status.textContent = "Locating address…";
   try {
     nearbyCenter = await locateAddress(query);
+    document.querySelector(".explorer-layout")!.classList.remove("search-open");
+    document.querySelector("#list-toggle")!.setAttribute("aria-expanded", "false");
     showSearchPoint(nearbyCenter, 14.5);
     render();
     status.textContent = "Address located. Nearby results use geographic distance from verified record coordinates.";
@@ -280,3 +344,15 @@ document.querySelector<HTMLFormElement>("#nearby-search")!.addEventListener("sub
     status.textContent = error instanceof Error ? error.message : "Address search failed.";
   }
 });
+
+
+function updateMobileSearchButton() {
+  const button = document.querySelector<HTMLButtonElement>("#list-toggle")!;
+  button.textContent = mobile.isMobile() ? "Search" : "Activity";
+  button.setAttribute("aria-controls", mobile.isMobile() ? "nearby-search" : "activity-panel");
+}
+matchMedia("(max-width: 800px), (max-height: 500px) and (pointer: coarse)").addEventListener("change", updateMobileSearchButton);
+updateMobileSearchButton();
+
+// Export supports integration tests without adding globals or alternate runtime behavior.
+export { map as explorerMap };

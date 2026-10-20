@@ -1,0 +1,25 @@
+name: Explorer interaction checks
+on:
+  pull_request:
+  push:
+    branches: [feat/mobile-explorer-carousel, main]
+jobs:
+  explorer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build -- --base=/whats-coming-carlsbad/
+      - run: npx playwright-core install --with-deps chromium
+      - run: node tests/browser/mobile-explorer.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-explorer-screenshots
+          path: artifacts/mobile-explorer/
