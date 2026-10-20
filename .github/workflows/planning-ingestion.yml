@@ -1,0 +1,47 @@
+name: Ingest Planning Commission documents
+on:
+  schedule:
+    - cron: '45 18 * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Persist checksum-bound reviewed evidence (other findings stay pending)
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ['scripts/planning/**', '.github/workflows/planning-ingestion.yml']
+permissions:
+  contents: read
+concurrency:
+  group: planning-ingestion
+  cancel-in-progress: false
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: npm ci
+      - run: npm test
+      - name: Collect, match and persist reviewed evidence
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          APPLY: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
+        run: |
+          args=()
+          if [[ "$APPLY" == "true" ]]; then args+=(--apply); fi
+          node scripts/planning/ingest.mjs "${args[@]}"
+      - name: Retain document plans, review queue and discovery failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planning-ingestion-${{ github.run_id }}
+          path: artifacts/planning/
+          retention-days: 14

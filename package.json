@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",
-    "test": "node --test tests/**/*.test.mjs",
+    "test": "node --test tests/*.test.mjs tests/planning/*.test.mjs",
     "abc:ingest": "node scripts/abc/ingest.mjs",
     "abc:dry-run": "node scripts/abc/ingest.mjs --dry-run",
     "abc:fixture": "node scripts/abc/ingest.mjs --dry-run --fixture tests/fixtures/abc-sample.csv",
@@ -17,7 +17,9 @@
     "county:fixture": "node scripts/county-food/ingest.mjs --dry-run --fixture tests/fixtures/county-food-sample.json",
     "dehq:ingest": "node scripts/dehq/ingest.mjs",
     "dehq:dry-run": "node scripts/dehq/ingest.mjs --dry-run",
-    "dehq:fixture": "node scripts/dehq/ingest.mjs --dry-run --fixture tests/fixtures/dehq-sample.json"
+    "dehq:fixture": "node scripts/dehq/ingest.mjs --dry-run --fixture tests/fixtures/dehq-sample.json",
+    "planning:dry-run": "node scripts/planning/ingest.mjs",
+    "planning:ingest": "node scripts/planning/ingest.mjs --apply"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",
