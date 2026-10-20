@@ -64,3 +64,15 @@ New projects created: **0**. Existing projects enriched: **1**, Fairfield. Catal
 `npm run planning:dry-run` reads the production catalog with Supabase credentials and writes a concrete plan/report to `artifacts/planning/`. `--catalog <json>` supplies `{projects,identifiers}` for an offline catalog. `npm run planning:ingest` applies only reviewed existing-project evidence. `--manifest <json>` selects an alternate reviewed source manifest.
 
 Workflow runs store the report in the private database run log and upload 14-day artifacts. Discovery HTTP failures produce a nonzero exit even if fallback documents succeed; they must not be mistaken for complete agenda coverage. Workflow dispatch defaults to dry-run; scheduled and main push runs apply only the checked-in reviewed manifest.
+
+## Deployment evidence
+
+- Implementation commit: `b1399a7d141c3b943e9e532cf1c7700b30d4da41`.
+- Merged [PR #6](https://github.com/mattwilhalme/whats-coming-carlsbad/pull/6) into main as `674ff0027e1c0ddc7dc83f63d3d6dcc83976b829`.
+- [First deployed ingestion run](https://github.com/mattwilhalme/whats-coming-carlsbad/actions/runs/39357546488): 34 tests passed; both live PDFs processed and persisted with zero new additions; city discovery returned HTTP 403; overall job correctly failed for incomplete discovery.
+- [Diagnostic artifact](https://github.com/mattwilhalme/whats-coming-carlsbad/actions/runs/39357546488/artifacts/12236026147): plan and report uploaded successfully.
+- Database run log: `3c928759-c969-4f9f-b3e5-3409261d65ba`, started October 20 at 02:11:36 UTC (October 19 at 7:11 p.m. Pacific), mode `apply`. Both document persistence results report `document_added=false`, `claims_added=0`, `events_added=0`. No run-log error.
+- [Website deployment](https://github.com/mattwilhalme/whats-coming-carlsbad/actions/runs/39357546449) succeeded.
+- The daily schedule is installed, but a future `schedule`-triggered execution has not yet been observed. This deployment verifies execution on a main-branch push, not future cron delivery.
+
+The remaining blocking dependency is an accessible official meeting index/document feed or reviewed source manifests for the two meeting packets. Once available, item segmentation, OCR when needed, outcome extraction and reviewed new-project creation still require implementation and live validation. This report does not claim those steps are complete.
