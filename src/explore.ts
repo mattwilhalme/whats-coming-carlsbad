@@ -99,7 +99,14 @@ map?.addControl(new ScaleControl({ unit: "imperial" }), "bottom-right");
 const mobile = createMobileExplorer(id => {
   const activity = visibleRows.find(row => row.id === id);
   if (activity) void selectActivity(activity, false);
-}, () => map?.resize());
+}, () => {
+  if (!map) return;
+  const center = map.getCenter();
+  const moving = map.isMoving();
+  map.resize();
+  // Keep the geographic center stable when the pitched viewport changes shape.
+  if (!moving) map.jumpTo({ center });
+});
 const dialog = document.querySelector<HTMLDialogElement>("#project-dialog")!;
 dialog.querySelector('button')!.addEventListener('click', () => dialog.close());
 function openDetails(card: HTMLElement) {

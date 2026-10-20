@@ -130,10 +130,20 @@ try {
   await page.goto(`${base}/explore.html?focus=signal%3Afixture-2`);
   await selected(page, 'signal:fixture-2'); await cameraAt(page, signals[2].longitude);
   assert.equal(await page.locator('#activity-list .activity-card').count(), 7, 'deep link retains browsing context');
+  async function selectedPointVisible() {
+    await page.waitForFunction(async () => {
+      const { explorerMap: map } = await import('/src/explore.ts');
+      const point = map.project([-117.3506 + 2 * .002, 33.1581]);
+      const canvas = map.getCanvas();
+      return point.x > 16 && point.x < canvas.clientWidth - 16 && point.y > 16 && point.y < canvas.clientHeight - 16;
+    });
+  }
   await page.setViewportSize({ width: 320, height: 568 }); await assertShare(50);
+  await selectedPointVisible();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.screenshot({ path: 'artifacts/mobile-explorer/narrow.png' });
   await page.setViewportSize({ width: 844, height: 390 }); await assertShare(50);
+  await selectedPointVisible();
   await selected(page, 'signal:fixture-2');
   await page.screenshot({ path: 'artifacts/mobile-explorer/landscape.png' });
   await page.setViewportSize({ width: 390, height: 844 });
